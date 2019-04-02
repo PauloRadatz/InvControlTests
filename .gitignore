@@ -1,0 +1,30 @@
+﻿# Comentários
+# Lista de arquivos e pastas a serem ignorados pelo Git.
+# Arquivos .pyc
+Fontes/*.pyc
+
+
+# Ignora os arquivos dentro da pasta .idea
+.idea/  
+Output/
+Output_temp/
+
+
+
+# ----------------------- Manual -----------------------------------
+#+ Creation
+#- Create Text Document
+#- Type ".gitignore." as File Name
+#- Add Multiple Ignore Files To Repository
+#
+#+ Ignore Patterns
+#- Type The Full File Path
+#- Use "*.＜File Type＞" To Exclude All
+#- Use "*" To Match Path or File Names
+#- Use "#" For Comments
+#- Use "\" Before Special Characters To Use For Patterns
+#- Use "!" To Explicitly Include Files
+#
+#+ Global Ignore File
+#- Edit The File
+#- Be Aware of It
