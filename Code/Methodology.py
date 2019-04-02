@@ -10,25 +10,32 @@ from pylab import *
 import os               # for path manipulation and directory operations
 import pandas as pd
 import numpy as np
+import DSS
+import Scenario
 
-class DSS(object):
+class Methodology(object):
 
     #------------------------------------------------------------------------------------------------------------------#
-    def __init__(self, dssObj, dssFileName):
+    def __init__(self):
 
         # OpenDSS Object
-        self.dss = dssObj
+        self.dss = DSS.DSS()
+
+    def set_condition(self, condition):
+        self.condition = condition
+
+    def compile_dss(self):
 
         # Always a good idea to clear the DSS when loading a new circuit
         self.dss.dssObj.ClearAll()
 
         # Load the given circuit master file into OpenDSS
-        line1 = "compile [" + dssFileName + "]"
+        line1 = "compile [" + self.condition.dssFileName + "]"
         self.dss.dssText.Command = line1
 
-    def set_pvSystems(self, df_PVSystems):
+    def set_pvSystems(self):
 
-        for index, pv in df_PVSystems.iterrows():
+        for index, pv in self.condition.df_PVSystems.iterrows():
 
             kWPmpp = float(pv["size (kW)"])
             pvkVA = 1.1 * kWPmpp
@@ -56,7 +63,7 @@ class DSS(object):
                 self.dss.dssText.Command = line7
                 self.dss.dssText.Command = line8
 
-    def set_smartfunction(self, df_PVSystems):
+    def set_smartfunction(self):
 
         # Volt-var Curve
         x_curve = "[0.5 0.92 0.95 1.0 1.02 1.05 1.5]"
@@ -72,7 +79,7 @@ class DSS(object):
         self.dss.dssText.Command = line1
         self.dss.dssText.Command = line2
 
-        for index, pv in df_PVSystems.iterrows():
+        for index, pv in self.condition.df_PVSystems.iterrows():
 
             smart_function = pv["Smart Functions"]
             bus = pv["PV Buses"]

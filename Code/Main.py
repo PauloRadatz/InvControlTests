@@ -2,6 +2,7 @@
 
 import Scenario
 import DSS
+import Methodology
 import os
 import csv
 import timeit
@@ -48,9 +49,7 @@ class Main(object):
 
         df_conditions_results_dic = pd.DataFrame()
 
-
-        # Connect Python to OpenDSS via dll or COM. It is done just once in the code
-        self.dssObject = DSS.DSS()
+        methodologyObj = Methodology.Methodology()
 
         # OpenDSS Model Directory
         self.OpenDSS_folder_path = os.path.dirname(dssFileName)
@@ -70,7 +69,7 @@ class Main(object):
         for index, row in df_conditions.iterrows():
             print(u"Scenario ID " + str(row[1]) + u" Created")
             # Each connection is an object of the Settings class
-            conditionObject = Scenario.Settings(self.dssObject, dssFileName, row)
+            conditionObject = Scenario.Settings(dssFileName, row, methodologyObj)
             Main.ConditionList.append(conditionObject)
 
         # Runs Connection Objects
@@ -82,7 +81,7 @@ class Main(object):
             # Start timing of the connection ID simulation
             start_time_connection = timeit.default_timer()
             for i in range(condition.numberScenarios):
-                condition.process()
+                condition.process(i)
 
             print(u"\nSimulation time Condition ID " + str(condition.conditionID) + " = " + str((timeit.default_timer() - start_time_connection)/60) + u" min")
 

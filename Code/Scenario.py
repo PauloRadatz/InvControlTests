@@ -4,7 +4,6 @@ author = "Paulo Radatz and Celso Rocha"
 version = "01.00.04"
 last_update = "10/13/2017"
 
-import ControlOpenDSS
 import timeit
 from pylab import *
 import pandas as pd
@@ -15,13 +14,14 @@ import random
 
 class Settings(object):
 
-    def __init__(self, dssObj, dssFileName, row):
+    def __init__(self, dssFileName, row, methodologyObj):
+
+        self.methodologyObj = methodologyObj
+        self.methodologyObj.set_condition(self)
 
         self.df_PVSystems = pd.DataFrame()
 
         self.scenarioResultsList = []
-
-        self.dssObj = dssObj  # OpenDSS Object
 
         self.dssFileName = dssFileName  # OpenDSS file Name
         self.feederName = str(row["Feeder Name"])
@@ -54,7 +54,9 @@ class Settings(object):
             self.smart_functions = {0: 'PF', 1: 'VV', 2: 'VW', 3: 'VV_VW', 4: 'PF_VW'}
 
 
-    def process(self):
+    def process(self, k):
+
+        self.methodologyObj.set_condition(self)
 
         smartFunctionList = []
 
@@ -80,23 +82,23 @@ class Settings(object):
 
         elapsed_scenario = (timeit.default_timer() - start_basescenario_time) / 60
 
-        print "The Total RunTime of scenario is: " + str(elapsed_scenario) + " min"
+        print "The Total RunTime of scenario " + str(k + 1) + " is: " + str(elapsed_scenario) + " min"
 
 
 
     def runScenario(self):
 
         # Compile the Master File
-        self.Case = ControlOpenDSS.DSS(self.dssObj, self.dssFileName)
+        self.methodologyObj.compile_dss()
 
         # set PVSystems
-        self.Case.set_pvSystems(self.df_PVSystems)
+        self.methodologyObj.set_pvSystems()
 
         # set smart function
-        self.Case.set_smartfunction(self.df_PVSystems)
+        self.methodologyObj.set_smartfunction()
 
         # Solve Snap
-        self.Case.solve_snapshot()
+        self.methodologyObj.solve_snapshot()
 
 
 
