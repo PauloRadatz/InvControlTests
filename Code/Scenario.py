@@ -19,8 +19,6 @@ class Settings(object):
         self.methodologyObj = methodologyObj
         self.methodologyObj.set_condition(self)
 
-        self.df_PVSystems = pd.DataFrame()
-
         self.scenarioResultsList = []
 
         self.dssFileName = dssFileName  # OpenDSS file Name
@@ -30,6 +28,31 @@ class Settings(object):
         self.penetrationLevel = row["Penetration Level (kW)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
         self.busesListFile = row["Buses File"]
+
+        if row["DeltaP_factor"] == "default":
+            self.deltaP_factor = 1.0
+        else:
+            self.deltaP_factor = row["DeltaP_factor"]
+
+        if row["DeltaQ_factor"] == "default":
+            self.deltaQ_factor = 0.7
+        else:
+            self.deltaQ_factor = row["DeltaQ_factor"]
+
+        if row["VarChangeTolerance"] == "default":
+            self.varChangeTolerance = 0.025
+        else:
+            self.varChangeTolerance = row["VarChangeTolerance"]
+
+        if row["ActivePChangeTolerance"] == "default":
+            self.activePChangeTolerance = 0.01
+        else:
+            self.activePChangeTolerance = row["ActivePChangeTolerance"]
+
+        if row["VoltageChangeTolerance"] == "default":
+            self.voltageChangeTolerance = 0.0001
+        else:
+            self.voltageChangeTolerance = row["VoltageChangeTolerance"]
 
         self.simulationMode = row["Simulation Mode"]
 
@@ -49,34 +72,51 @@ class Settings(object):
 
         # -------------- End Directories -------------------#
 
-        # Inverter smart functions
-        if self.simulationMode == "SnapShot":
-            self.smart_functions = {0: 'PF', 1: 'VV', 2: 'VW', 3: 'VV_VW', 4: 'PF_VW'}
-
-
     def process(self, k):
 
         self.methodologyObj.set_condition(self)
 
-        smartFunctionList = []
+        self.df_PVSystems = pd.DataFrame()
+        self.kVA_list = []
+        self.kvarlimit_list = []
+        self.pctPmpp_list = []
+        self.wattPriority_list = []
+        self.pfPriority_list = []
+        self.mode_list = []
+
+        self.vv_RefReactivePower_list = []
+        self.voltage_curvex_ref_list = []
+        self.voltwattYAxis_list = []
+
+
 
         # Start counting the time of the simulation of the entire simulation
         start_basescenario_time = timeit.default_timer()
 
         busesList = pd.read_csv(self.busesListFile, header=None)[0].tolist()
 
-        numberBuses = int(self.percentageBuses / 100.0 * len(busesList))
+        self.numberBuses = int(self.percentageBuses / 100.0 * len(busesList))
 
-        busesPV_list = random.sample(busesList, numberBuses)
+        busesPV_list = random.sample(busesList, self.numberBuses)
 
 
-        for i in range(numberBuses):
+        for i in range(self.numberBuses):
 
-            smartFunctionList.append(randint(0, len(self.smart_functions)))
+            self.set_pvsystem_properties()
+            self.set_invcontrol_properties()
+
 
         self.df_PVSystems["PV Buses"] = busesPV_list
-        self.df_PVSystems["Smart Functions"] = smartFunctionList
-        self.df_PVSystems["size (kW)"] = 1.0 * self.penetrationLevel / numberBuses
+        self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
+        self.df_PVSystems["kVA"] = self.kVA_list
+        self.df_PVSystems["kvarlimit"] = self.kvarlimit_list
+        self.df_PVSystems["pctPmpp"] = self.pctPmpp_list
+        self.df_PVSystems["wattPriority"] = self.wattPriority_list
+        self.df_PVSystems["pfPriority"] = self.pfPriority_list
+        self.df_PVSystems["Smart Functions"] = self.mode_list
+        self.df_PVSystems["VV_RefReactivePower"] = self.vv_RefReactivePower_list
+        self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
+        self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
 
         self.runScenario()
 
@@ -103,5 +143,40 @@ class Settings(object):
 
 
 
+    def set_pvsystem_properties(self):
+
+        pmpp = 1.0 * self.penetrationLevel / self.numberBuses
+
+        kVA = [pmpp, 1.1 * pmpp]
+        pctPmpp = [60, 100]
+        wattPriority = ["yes", "no"]
+        pfPriority = ["yes", "no"]
+
+        kVA_value = kVA[randint(0, len(kVA))]
+
+        kvarlimit = [0.44 * kVA_value, kVA_value]
+
+        self.kVA_list.append(kVA_value)
+        self.kvarlimit_list.append(kvarlimit[randint(0, len(kvarlimit))])
+        self.pctPmpp_list.append(pctPmpp[randint(0, len(pctPmpp))])
+        self.wattPriority_list.append(wattPriority[randint(0, len(wattPriority))])
+        self.pfPriority_list.append(pfPriority[randint(0, len(pfPriority))])
+
+    def set_invcontrol_properties(self):
+
+        # Inverter smart functions
+        if self.simulationMode == "SnapShot":
+            mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
+        else:
+            mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
+
+        vv_RefReactivePower = ['VARAVAL_WATTS', 'VARMAX_WATTS']
+        voltage_curvex_ref = ['rated']
+        voltwattYAxis = ['PMPPPU', 'PAVAILABLEPU', 'PCTPMPPPU', 'KVARATINGPU']
 
 
+
+        self.mode_list.append(mode[randint(0, len(mode))])
+        self.vv_RefReactivePower_list.append(vv_RefReactivePower[randint(0, len(vv_RefReactivePower))])
+        self.voltage_curvex_ref_list.append(voltage_curvex_ref[randint(0, len(voltage_curvex_ref))])
+        self.voltwattYAxis_list.append(voltwattYAxis[randint(0, len(voltwattYAxis))])
