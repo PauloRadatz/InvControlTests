@@ -83,6 +83,8 @@ class Main(object):
             for i in range(condition.numberScenarios):
                 condition.process(i)
 
+            condition.get_results()
+
             print(u"\nSimulation time Condition ID " + str(condition.conditionID) + " = " + str((timeit.default_timer() - start_time_connection)/60) + u" min")
 
             # Makes a database Condition

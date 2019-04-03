@@ -19,15 +19,21 @@ class Settings(object):
         self.methodologyObj = methodologyObj
         self.methodologyObj.set_condition(self)
 
+        self.df_buses = pd.DataFrame()
+        self.df_buses1 = pd.DataFrame()
+        self.df_buses3 = pd.DataFrame()
+        self.df_buses2 = pd.DataFrame()
+
+        self.feeder_demand = nan
+
         self.scenarioResultsList = []
 
         self.dssFileName = dssFileName  # OpenDSS file Name
         self.feederName = str(row["Feeder Name"])
         self.conditionID = str(row["Condition ID"])
         self.numberScenarios = int(row["Number of Scenarios"])
-        self.penetrationLevel = row["Penetration Level (kW)"]
+        self.percentagePenetrationLevel = row["Penetration Level (%)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
-        self.busesListFile = row["Buses File"]
 
         if row["DeltaP_factor"] == "default":
             self.deltaP_factor = 1.0
@@ -55,6 +61,14 @@ class Settings(object):
             self.voltageChangeTolerance = row["VoltageChangeTolerance"]
 
         self.simulationMode = row["Simulation Mode"]
+
+        self.methodologyObj.get_buses()
+
+        self.methodologyObj.get_feeder_demand()
+
+        self.penetrationLevel = self.percentagePenetrationLevel / 100.0 * self.feeder_demand
+
+        self.df_buses_selected = self.df_buses3
 
 
         # -------------- Directories -------------------#
@@ -93,11 +107,10 @@ class Settings(object):
         # Start counting the time of the simulation of the entire simulation
         start_basescenario_time = timeit.default_timer()
 
-        busesList = pd.read_csv(self.busesListFile, header=None)[0].tolist()
 
-        self.numberBuses = int(self.percentageBuses / 100.0 * len(busesList))
 
-        busesPV_list = random.sample(busesList, self.numberBuses)
+        self.numberBuses = int(self.percentageBuses / 100.0 * len(self.df_buses_selected))
+        df_buses_random = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
 
 
         for i in range(self.numberBuses):
@@ -106,7 +119,8 @@ class Settings(object):
             self.set_invcontrol_properties()
 
 
-        self.df_PVSystems["PV Buses"] = busesPV_list
+        self.df_PVSystems["PV Bus"] = df_buses_random["Bus"]
+        self.df_PVSystems["BusNodes"] = df_buses_random["BusNodes"]
         self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
         self.df_PVSystems["kVA"] = self.kVA_list
         self.df_PVSystems["kvarlimit"] = self.kvarlimit_list
@@ -140,8 +154,11 @@ class Settings(object):
         # Solve Snap
         self.methodologyObj.solve_snapshot()
 
+        self.methodologyObj.get_results()
 
-
+    def get_results(self):
+        self.methodologyObj.show_results()
+        print "here"
 
     def set_pvsystem_properties(self):
 
