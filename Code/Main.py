@@ -76,7 +76,6 @@ class Main(object):
         for condition in Main.ConditionList:
             print(u"\n-----------------Running Condition ID " + str(condition.conditionID) + u"--------------------")
             print(u"Penetration Level (%) = " + str(condition.penetrationLevel))
-            #print(u"Number of PV sites = " + str(condition.numberPV))
 
             # Start timing of the connection ID simulation
             start_time_connection = timeit.default_timer()
@@ -90,6 +89,11 @@ class Main(object):
             # Makes a database Condition
             conn = sqlite3.connect(sqlite_file)
             print(u"\n-----------------Reading Condition ID " + str(condition.conditionID) + u" Results--------------------")
+
+            for issue in methodologyObj.resultsObj.df_issue_dic:
+                methodologyObj.resultsObj.df_issue_dic[issue].to_sql(str(issue), conn, if_exists="replace")
+
+
             ##df_conditions_results_dic[str(condition.conditionID)] = pd.DataFrame(condition.scenarioResultsList)
 
             # https://andypicke.github.io/sql_pandas_post/    , chunksize=1000, dtype={"Col_21": String}

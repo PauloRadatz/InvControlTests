@@ -1,10 +1,5 @@
 # -*- coding: iso-8859-15 -*-
 
-"""
-
-Classe responsável por fazer conexão com o OpenDSS. Seu objeto armazena os atalhos das interfaces"
-
-"""
 
 import ctypes
 import win32com.client
@@ -15,16 +10,9 @@ from comtypes import automation
 import os
 import sys
 
-author = "Paulo Radatz and Celso Rocha"
-version = "01.00.02"
-last_update = "09/13/2016"
-
-
 class DSS(object):
 
     def __init__(self):
-        """ Cria um novo objeto DSS """
-        """ Compile OpenDSS model and initialize variables."""
 
         # These variables provide direct interface into OpenDSS
         sys.argv = ["makepy", r"OpenDSSEngine.DSS"]

@@ -34,6 +34,7 @@ class Settings(object):
         self.numberScenarios = int(row["Number of Scenarios"])
         self.percentagePenetrationLevel = row["Penetration Level (%)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
+        self.maxControlIter = row["Max Control Iterations"]
 
         if row["DeltaP_factor"] == "default":
             self.deltaP_factor = 1.0
@@ -90,6 +91,8 @@ class Settings(object):
 
         self.methodologyObj.set_condition(self)
 
+        self.scenarioID = k + 1
+
         self.df_PVSystems = pd.DataFrame()
         self.kVA_list = []
         self.kvarlimit_list = []
@@ -97,6 +100,7 @@ class Settings(object):
         self.wattPriority_list = []
         self.pfPriority_list = []
         self.mode_list = []
+        self.pf_list = []
 
         self.vv_RefReactivePower_list = []
         self.voltage_curvex_ref_list = []
@@ -123,6 +127,7 @@ class Settings(object):
         self.df_PVSystems["BusNodes"] = df_buses_random["BusNodes"]
         self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
         self.df_PVSystems["kVA"] = self.kVA_list
+        self.df_PVSystems["pf"] = self.pf_list
         self.df_PVSystems["kvarlimit"] = self.kvarlimit_list
         self.df_PVSystems["pctPmpp"] = self.pctPmpp_list
         self.df_PVSystems["wattPriority"] = self.wattPriority_list
@@ -136,7 +141,7 @@ class Settings(object):
 
         elapsed_scenario = (timeit.default_timer() - start_basescenario_time) / 60
 
-        print "The Total RunTime of scenario " + str(k + 1) + " is: " + str(elapsed_scenario) + " min"
+        print "The Total RunTime of scenario " + str(self.scenarioID) + " is: " + str(elapsed_scenario) + " min"
 
 
 
@@ -168,6 +173,7 @@ class Settings(object):
         pctPmpp = [60, 100]
         wattPriority = ["yes", "no"]
         pfPriority = ["yes", "no"]
+        pf = ["-0.98", "0.98"]
 
         kVA_value = kVA[randint(0, len(kVA))]
 
@@ -178,6 +184,7 @@ class Settings(object):
         self.pctPmpp_list.append(pctPmpp[randint(0, len(pctPmpp))])
         self.wattPriority_list.append(wattPriority[randint(0, len(wattPriority))])
         self.pfPriority_list.append(pfPriority[randint(0, len(pfPriority))])
+        self.pf_list.append(pf[randint(0, len(pf))])
 
     def set_invcontrol_properties(self):
 

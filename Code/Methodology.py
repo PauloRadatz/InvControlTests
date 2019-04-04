@@ -141,7 +141,7 @@ class Methodology(object):
             busName = pv["PV Bus"]
 
             if smart_function == "PF" or smart_function == "PF_VW":
-                line = "PVSystem.PV_" + busName + ".pf=-0.97"
+                line = "PVSystem.PV_{}.pf={}".format(busName, pv["pf"])
 
             elif smart_function == "voltvar":
                 line = 'New InvControl.{} mode=voltvar voltage_curvex_ref={} vvc_curve1=generic deltaQ_factor={} VV_RefReactivePower={} eventlog=no PVSystemList=PV_{} VoltageChangeTolerance={} VarChangeTolerance={}'\
@@ -172,18 +172,24 @@ class Methodology(object):
 
     def solve_snapshot(self):
 
+        self.dss.dssObj.AllowForms = "false"
         self.dss.dssText.Command = "set mode=snap"
-        self.dss.dssText.Command = "set maxcontroli = 2000"
+        self.dss.dssText.Command = "set maxcontroliter ={}".format(self.condition.maxControlIter)
         self.dss.dssText.Command = "solve"
 
     def get_results(self):
 
         print self.dss.dssSolution.ControlIterations
+
+        if self.dss.dssSolution.ControlIterations == self.condition.maxControlIter:
+            self.resultsObj.get_config_issued()
         self.resultsObj.controlIterations.append(self.dss.dssSolution.ControlIterations)
 
 
     def show_results(self):
 
         self.resultsObj.get_results()
+
+        self.resultsObj.get_maxControlIter_statistics()
 
         print "here"
