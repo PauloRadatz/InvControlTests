@@ -54,13 +54,13 @@ class Main(object):
 
         df_conditions_results_dic = pd.DataFrame()
 
-        self.methodologyObj = Methodology.Methodology()
-
-        self.flag_conditions_buses_fixed = "Yes"
+        methodologyObj = Methodology.Methodology()
 
         # OpenDSS Model Directory
         self.OpenDSS_folder_path = os.path.dirname(dssFileName)
 
+        # Options
+        df_options = pd.read_csv(os.path.dirname(fileName) + r"\Options.csv", engine="python").set_index("Option")
         # Scenario Options file
         df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
 
@@ -79,12 +79,11 @@ class Main(object):
         for index, row in df_conditions.iterrows():
             print(u"Scenario ID " + str(row[1]) + u" Created")
             # Each connection is an object of the Settings class
-            conditionObject = Scenario.Settings(dssFileName, row, self.methodologyObj, df_scenario_options)
+            conditionObject = Scenario.Settings(dssFileName, row, methodologyObj, df_scenario_options)
             Main.ConditionList.append(conditionObject)
 
         df_buses_fixed = ""
         base = "yes"
-        fixed = "yes"
 
         # Runs Connection Objects
         for condition in Main.ConditionList:
@@ -102,7 +101,7 @@ class Main(object):
             start_time_connection = timeit.default_timer()
 
             for i in range(condition.numberScenarios):
-                condition.process(i, df_buses_fixed, base, fixed)
+                condition.process(i, df_buses_fixed, base, df_options["Value"]["Scenarios Buses"])
             if base == "yes":
                 df_buses_fixed = condition.df_buses_scenarios
                 base = "no"
@@ -127,7 +126,7 @@ class Main(object):
 
             conn.close()
 
-        df_condition_results = pd.DataFrame().from_dict(self.methodologyObj.resultsObj.sr_condition_statistics_results_dic)
+        df_condition_results = pd.DataFrame().from_dict(methodologyObj.resultsObj.sr_condition_statistics_results_dic)
 
         df_condition_results.T.to_csv(outputFolder + r"\condition_results.csv", index=False)
         df_scenario_options.to_csv(outputFolder + r"\Scenario_options.csv")

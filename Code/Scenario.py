@@ -13,6 +13,7 @@ import random
 class Settings(object):
     list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
     list_default = ["Default", "default", "d"] + list_false
+    list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
 
     def __init__(self, dssFileName, row, methodologyObj, df_scenario_options):
 
@@ -102,7 +103,7 @@ class Settings(object):
 
         self.methodologyObj.set_condition(self)
 
-        self.scenarioID = k + 1
+        self.scenarioID = k
 
         self.df_PVSystems = pd.DataFrame()
         self.kVA_list = []
@@ -117,18 +118,15 @@ class Settings(object):
         self.voltage_curvex_ref_list = []
         self.voltwattYAxis_list = []
 
-
-
         # Start counting the time of the simulation of the entire simulation
         start_basescenario_time = timeit.default_timer()
-
 
         for i in range(self.numberBuses):
 
             self.set_pvsystem_properties()
             self.set_invcontrol_properties()
 
-        if base == "yes" or fixed == "no":
+        if base in Settings.list_true or fixed in Settings.list_false:
 
             if self.df_scenario_options["Fixed"]["ScenariosBusesFixed"] in Settings.list_false:
                 df_buses = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
@@ -140,10 +138,8 @@ class Settings(object):
             if k == (self.numberScenarios - 1):
                 self.df_buses_scenarios = pd.concat(self.dic_buses_scenarios, axis=1)
 
-        elif fixed == "yes":
+        elif fixed in Settings.list_true:
             df_buses = df_buses_fixed[k]
-
-
 
         self.df_PVSystems["PV Bus"] = df_buses["Bus"]
         self.df_PVSystems["BusNodes"] = df_buses["BusNodes"]
@@ -159,17 +155,11 @@ class Settings(object):
         self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
         self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
 
-
-
         self.runScenario()
 
         elapsed_scenario = (timeit.default_timer() - start_basescenario_time) / 60
 
-
-
         print "The Total RunTime of scenario " + str(self.scenarioID) + " is: " + str(elapsed_scenario) + " min"
-
-
 
     def runScenario(self):
 
