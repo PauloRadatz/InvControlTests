@@ -1,8 +1,6 @@
 # encoding: utf-8
 
-author = "Paulo Radatz and Celso Rocha"
-version = "01.00.04"
-last_update = "10/13/2017"
+
 
 import timeit
 from pylab import *
@@ -13,16 +11,22 @@ import random
 
 
 class Settings(object):
+    list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
+    list_default = ["Default", "default", "d"] + list_false
 
-    def __init__(self, dssFileName, row, methodologyObj):
+    def __init__(self, dssFileName, row, methodologyObj, df_scenario_options):
 
         self.methodologyObj = methodologyObj
         self.methodologyObj.set_condition(self)
 
+        self.df_scenario_options = df_scenario_options
         self.df_buses = pd.DataFrame()
         self.df_buses1 = pd.DataFrame()
         self.df_buses3 = pd.DataFrame()
         self.df_buses2 = pd.DataFrame()
+
+        self.controlIterations = []
+        self.df_issue_dic = {}
 
         self.feeder_demand = nan
 
@@ -35,6 +39,8 @@ class Settings(object):
         self.percentagePenetrationLevel = row["Penetration Level (%)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
         self.maxControlIter = row["Max Control Iterations"]
+
+        self.connections_buses_fixed = row["Scenarios buses fixed"]
 
         if row["DeltaP_factor"] == "default":
             self.deltaP_factor = 1.0
@@ -71,6 +77,11 @@ class Settings(object):
 
         self.df_buses_selected = self.df_buses3
 
+        self.numberBuses = int(self.percentageBuses / 100.0 * len(self.df_buses_selected))
+        self.df_buses_scenarios_fixed = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
+
+
+        self.dic_buses_scenarios = {}
 
         # -------------- Directories -------------------#
         # OpenDSS Model Directory
@@ -87,7 +98,7 @@ class Settings(object):
 
         # -------------- End Directories -------------------#
 
-    def process(self, k):
+    def process(self, k, df_buses_fixed, base, fixed):
 
         self.methodologyObj.set_condition(self)
 
@@ -112,19 +123,30 @@ class Settings(object):
         start_basescenario_time = timeit.default_timer()
 
 
-
-        self.numberBuses = int(self.percentageBuses / 100.0 * len(self.df_buses_selected))
-        df_buses_random = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
-
-
         for i in range(self.numberBuses):
 
             self.set_pvsystem_properties()
             self.set_invcontrol_properties()
 
+        if base == "yes" or fixed == "no":
 
-        self.df_PVSystems["PV Bus"] = df_buses_random["Bus"]
-        self.df_PVSystems["BusNodes"] = df_buses_random["BusNodes"]
+            if self.df_scenario_options["Fixed"]["ScenariosBusesFixed"] in Settings.list_false:
+                df_buses = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
+            else:
+                df_buses = self.df_buses_scenarios_fixed
+
+            self.dic_buses_scenarios[k] = df_buses
+
+            if k == (self.numberScenarios - 1):
+                self.df_buses_scenarios = pd.concat(self.dic_buses_scenarios, axis=1)
+
+        elif fixed == "yes":
+            df_buses = df_buses_fixed[k]
+
+
+
+        self.df_PVSystems["PV Bus"] = df_buses["Bus"]
+        self.df_PVSystems["BusNodes"] = df_buses["BusNodes"]
         self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
         self.df_PVSystems["kVA"] = self.kVA_list
         self.df_PVSystems["pf"] = self.pf_list
@@ -137,9 +159,13 @@ class Settings(object):
         self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
         self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
 
+
+
         self.runScenario()
 
         elapsed_scenario = (timeit.default_timer() - start_basescenario_time) / 60
+
+
 
         print "The Total RunTime of scenario " + str(self.scenarioID) + " is: " + str(elapsed_scenario) + " min"
 
@@ -159,26 +185,67 @@ class Settings(object):
         # Solve Snap
         self.methodologyObj.solve_snapshot()
 
-        self.methodologyObj.get_results()
+        self.methodologyObj.get_scenario_results()
 
     def get_results(self):
-        self.methodologyObj.show_results()
+        self.methodologyObj.get_condition_results()
         print "here"
 
     def set_pvsystem_properties(self):
 
         pmpp = 1.0 * self.penetrationLevel / self.numberBuses
 
-        kVA = [pmpp, 1.1 * pmpp]
-        pctPmpp = [60, 100]
-        wattPriority = ["yes", "no"]
-        pfPriority = ["yes", "no"]
-        pf = ["-0.98", "0.98"]
+        # kVA property
+        if self.df_scenario_options["Fixed"]["kVA"] in Settings.list_false:
+            kVA = [pmpp, 1.1 * pmpp]
+        elif self.df_scenario_options["Value"]["kVA"] in Settings.list_default:
+            kVA = [pmpp]
+        else:
+            kVA = []
+
+        # pctPmpp property
+        if self.df_scenario_options["Fixed"]["pctPmpp"] in Settings.list_false:
+            pctPmpp = [60.0, 100.0]
+        elif self.df_scenario_options["Value"]["pctPmpp"] in Settings.list_default:
+            pctPmpp = [100.0]
+        else:
+            pctPmpp = [float(self.df_scenario_options["Value"]["pctPmpp"])]
+
+        # WattPriority property
+        if self.df_scenario_options["Fixed"]["wattPriority"] in Settings.list_false:
+            wattPriority = ["yes", "no"]
+        elif self.df_scenario_options["Value"]["wattPriority"] in Settings.list_default:
+            wattPriority = ["no"]
+        else:
+            wattPriority = [self.df_scenario_options["Value"]["WattPriority"]]
+
+        # PFPriority property
+        if self.df_scenario_options["Fixed"]["pfPriority"] in Settings.list_false:
+            pfPriority = ["yes", "no"]
+        elif self.df_scenario_options["Value"]["pfPriority"] in Settings.list_default:
+            pfPriority = ["yes"]
+        else:
+            pfPriority = [self.df_scenario_options["Value"]["pfPriority"]]
+
+        # pf property
+        if self.df_scenario_options["Fixed"]["pf"] in Settings.list_false:
+            pf = ["-0.98", "0.98"]
+        elif self.df_scenario_options["Value"]["pf"] in Settings.list_default:
+            pf = ["-0.98"]
+        else:
+            pf = [self.df_scenario_options["Value"]["pf"]]
 
         kVA_value = kVA[randint(0, len(kVA))]
 
-        kvarlimit = [0.44 * kVA_value, kVA_value]
+        # kvarlimit property
+        if self.df_scenario_options["Fixed"]["kvarlimit"] in Settings.list_false:
+            kvarlimit = [0.44 * kVA_value, kVA_value]
+        elif self.df_scenario_options["Value"]["kvarlimit"] in Settings.list_default:
+            kvarlimit = [kVA_value]
+        else:
+            kvarlimit = []
 
+        # Populates lists
         self.kVA_list.append(kVA_value)
         self.kvarlimit_list.append(kvarlimit[randint(0, len(kvarlimit))])
         self.pctPmpp_list.append(pctPmpp[randint(0, len(pctPmpp))])
@@ -194,10 +261,29 @@ class Settings(object):
         else:
             mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
 
-        vv_RefReactivePower = ['VARAVAL_WATTS', 'VARMAX_WATTS']
-        voltage_curvex_ref = ['rated']
-        voltwattYAxis = ['PMPPPU', 'PAVAILABLEPU', 'PCTPMPPPU', 'KVARATINGPU']
+        # vv_RefReactivePower property
+        if self.df_scenario_options["Fixed"]["vv_RefReactivePower"] in Settings.list_false:
+            vv_RefReactivePower = ['VARAVAL_WATTS', 'VARMAX_WATTS']
+        elif self.df_scenario_options["Value"]["vv_RefReactivePower"] in Settings.list_default:
+            vv_RefReactivePower = ['VARMAX_WATTS']
+        else:
+            vv_RefReactivePower = []
 
+        # voltage_curvex_ref property
+        if self.df_scenario_options["Fixed"]["voltage_curvex_ref"] in Settings.list_false:
+            voltage_curvex_ref = ['rated']
+        elif self.df_scenario_options["Value"]["voltage_curvex_ref"] in Settings.list_default:
+            voltage_curvex_ref = ['rated']
+        else:
+            voltage_curvex_ref = []
+
+        # voltwattYAxis property
+        if self.df_scenario_options["Fixed"]["voltwattYAxis"] in Settings.list_false:
+            voltwattYAxis = ['PMPPPU', 'PAVAILABLEPU', 'PCTPMPPPU', 'KVARATINGPU']
+        elif self.df_scenario_options["Value"]["voltwattYAxis"] in Settings.list_default:
+            voltwattYAxis = ['PMPPPU']
+        else:
+            voltwattYAxis = []
 
 
         self.mode_list.append(mode[randint(0, len(mode))])

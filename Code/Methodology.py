@@ -1,7 +1,5 @@
 # ##  # -*- coding: iso-8859-15 -*-
-author = "Paulo Radatz"
-version = "01.00.02"
-last_update = "09/13/2016"
+
 
 import win32com.client
 from win32com.client import makepy
@@ -15,9 +13,9 @@ import Scenario
 import random
 import Results
 
+
 class Methodology(object):
 
-    #------------------------------------------------------------------------------------------------------------------#
     def __init__(self):
 
         self.dss = DSS.DSS()
@@ -56,6 +54,8 @@ class Methodology(object):
 
             nodes = self.dss.dssBus.Nodes
 
+            df_buses = pd.DataFrame()
+
             if 1 in nodes:
                 node1_list.append("yes")
                 busNodes = busNodes + ".1"
@@ -82,7 +82,6 @@ class Methodology(object):
         self.condition.df_buses["Node3"] = node3_list
 
         self.condition.df_buses3 = self.condition.df_buses[(self.condition.df_buses["NumNodes"] == 3) & (self.condition.df_buses["Node1"] == "yes") & (self.condition.df_buses["Node2"] == "yes") & (self.condition.df_buses["Node3"] == "yes")][["Bus", "BusNodes"]]
-
 
     def compile_dss(self):
 
@@ -177,18 +176,18 @@ class Methodology(object):
         self.dss.dssText.Command = "set maxcontroliter ={}".format(self.condition.maxControlIter)
         self.dss.dssText.Command = "solve"
 
-    def get_results(self):
+    def get_scenario_results(self):
 
         print self.dss.dssSolution.ControlIterations
 
         if self.dss.dssSolution.ControlIterations == self.condition.maxControlIter:
             self.resultsObj.get_config_issued()
-        self.resultsObj.controlIterations.append(self.dss.dssSolution.ControlIterations)
+        self.condition.controlIterations.append(self.dss.dssSolution.ControlIterations)
 
 
-    def show_results(self):
+    def get_condition_results(self):
 
-        self.resultsObj.get_results()
+        self.resultsObj.get_condition_results()
 
         self.resultsObj.get_maxControlIter_statistics()
 

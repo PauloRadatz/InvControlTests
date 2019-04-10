@@ -15,22 +15,23 @@ class Results:
         self.condition = None
         self.methodologyObj = methodologyObj
 
-        self.controlIterations = []
+        self.sr_condition_statistics_results_dic = {}
 
-        self.df_issue_dic = {}
+
 
     def set_condition(self, condition):
         self.condition = condition
 
-    def get_results(self):
 
-        self.df_results = pd.DataFrame()
 
-        self.df_results["Max Control Iterations"] = self.controlIterations
+    def get_condition_results(self):
+        self.df_condition_results = pd.DataFrame()
+
+        self.df_condition_results["Max Control Iterations"] = self.condition.controlIterations
 
     def get_maxControlIter_statistics(self):
 
-        sr_maxcontroliter = pd.Series(self.df_results["Max Control Iterations"])
+        sr_maxcontroliter = pd.Series(self.df_condition_results["Max Control Iterations"])
 
         num_issue = sr_maxcontroliter.isin([self.condition.maxControlIter]).sum()
 
@@ -44,6 +45,8 @@ class Results:
         self.maxControlIter_min = sr_maxControlIter["min"]
         self.maxControlIter_max = sr_maxControlIter["max"]
 
+        self.sr_condition_statistics_results_dic[self.condition.conditionID] = sr_maxControlIter
+
     def get_config_issued(self):
 
-        self.df_issue_dic[self.condition.scenarioID] = self.condition.df_PVSystems
+        self.condition.df_issue_dic[self.condition.scenarioID] = self.condition.df_PVSystems
