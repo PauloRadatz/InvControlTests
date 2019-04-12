@@ -1,48 +1,62 @@
 # encoding: utf-8
 
-
-
 import timeit
 from pylab import *
 import pandas as pd
-import os
-import itertools
 import random
 
 
 class Settings(object):
     list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
-    list_default = ["Default", "default", "d"] + list_false
+    list_default = ["Default", "default", "d"]
     list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
 
     def __init__(self, dssFileName, row, methodologyObj, df_scenario_options):
 
+        # Reads inputs
+        self.dssFileName = dssFileName
         self.methodologyObj = methodologyObj
+        self.df_scenario_options = df_scenario_options
+
+        # Actives this condition object into the methodology object
         self.methodologyObj.set_condition(self)
 
-        self.df_scenario_options = df_scenario_options
+        # ----- Variables initialization -----#
+        # Buses dataframes
         self.df_buses = pd.DataFrame()
         self.df_buses1 = pd.DataFrame()
         self.df_buses3 = pd.DataFrame()
         self.df_buses2 = pd.DataFrame()
 
+        # ----- Scenario Results ---- #
+        # Control iterations for each scenario
         self.controlIterations = []
+        # Max voltage
+        self.maxVoltage = []
+        # Scenario simulation time
+        self.scenario_simulation_time = []
+        # Feeder Demand
+        self.scenario_feeder_demand = []
+        # dataframe that stores the scenarios informations of those which have a Max control iteration issue
         self.df_issue_dic = {}
 
+        # Variable that stores the max feeder demand. It is calculated in Methodogy.get_feeder_demand method
         self.feeder_demand = nan
 
+        ###########################
         self.scenarioResultsList = []
 
-        self.dssFileName = dssFileName  # OpenDSS file Name
+        # Reads condition definitions
         self.feederName = str(row["Feeder Name"])
         self.conditionID = str(row["Condition ID"])
         self.numberScenarios = int(row["Number of Scenarios"])
         self.percentagePenetrationLevel = row["Penetration Level (%)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
         self.maxControlIter = row["Max Control Iterations"]
+        self.simulationMode = row["Simulation Mode"]
+        self.export_scenario_issue = row["Export Scenario Issue"]
 
-        self.connections_buses_fixed = row["Scenarios buses fixed"]
-
+        # Control loop convergence parameters
         if row["DeltaP_factor"] == "default":
             self.deltaP_factor = 1.0
         else:
@@ -68,44 +82,38 @@ class Settings(object):
         else:
             self.voltageChangeTolerance = row["VoltageChangeTolerance"]
 
-        self.simulationMode = row["Simulation Mode"]
-
+        # Populates buses dataframes
         self.methodologyObj.get_buses()
 
+        # Gets max feeder demand and stores it in self.feeder_demand
         self.methodologyObj.get_feeder_demand()
 
+        # defines the penetration level in kW
         self.penetrationLevel = self.percentagePenetrationLevel / 100.0 * self.feeder_demand
 
+        # FOR NOW IT HAS ONLY THE OPTION FOR THREE-PHASE BUSES.
+        # HERE WE NEED TO INCLUDE OTHER OPTIONS THAT WILL BE SET IN THE CONDITION INPUT
         self.df_buses_selected = self.df_buses3
 
+        # Defines the number of buses with PVSystem
         self.numberBuses = int(self.percentageBuses / 100.0 * len(self.df_buses_selected))
+
+        # Creates a buses dataframe in case the user wants to have all scenarios with the same buses.
+        # Check ScenariosBusesFixed
         self.df_buses_scenarios_fixed = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
 
+        # Dictionary used to store the scenarios of the base connection to be used in the others ones
+        self.scenarios_fixed_dic = {}
 
-        self.dic_buses_scenarios = {}
+    def process(self, k, df_scenarios_fixed, base, fixed):
 
-        # -------------- Directories -------------------#
-        # OpenDSS Model Directory
-        self.OpenDSS_folder_path = os.path.dirname(dssFileName)
-
-        self.resultsMainPath = self.OpenDSS_folder_path + r"/Results/"
-        if not os.path.exists(self.resultsMainPath):
-            os.makedirs(self.resultsMainPath)
-
-        # Results Directory
-        self.resultsPath = self.resultsMainPath + self.feederName + "_" + str(int(self.penetrationLevel)) + r"/"
-        if not os.path.exists(self.resultsPath):
-            os.makedirs(self.resultsPath)
-
-        # -------------- End Directories -------------------#
-
-    def process(self, k, df_buses_fixed, base, fixed):
-
+        # Actives this condition object into the methodology object
         self.methodologyObj.set_condition(self)
 
+        # Scenario identification
         self.scenarioID = k
 
-        self.df_PVSystems = pd.DataFrame()
+        # PVSystem lists
         self.kVA_list = []
         self.kvarlimit_list = []
         self.pctPmpp_list = []
@@ -114,67 +122,77 @@ class Settings(object):
         self.mode_list = []
         self.pf_list = []
 
+        # InvControl Lists
         self.vv_RefReactivePower_list = []
         self.voltage_curvex_ref_list = []
         self.voltwattYAxis_list = []
 
-        # Start counting the time of the simulation of the entire simulation
-        start_basescenario_time = timeit.default_timer()
+        # Scenario information
+        self.df_PVSystems = pd.DataFrame()
 
+        # For each PV deployment, the parameters are set randomly
         for i in range(self.numberBuses):
-
             self.set_pvsystem_properties()
             self.set_invcontrol_properties()
 
+        # If this is a base (1st) condition of the option to have the same scenarios through the conditions are not set
         if base in Settings.list_true or fixed in Settings.list_false:
 
+            # If the need to have the same buses through all scenarios are not set
             if self.df_scenario_options["Fixed"]["ScenariosBusesFixed"] in Settings.list_false:
                 df_buses = self.df_buses_selected.ix[random.sample(self.df_buses_selected.index, self.numberBuses)].reset_index(drop=True)
+            # Needs to have all scenarios with the same buses
             else:
                 df_buses = self.df_buses_scenarios_fixed
 
-            self.dic_buses_scenarios[k] = df_buses
+            # Populates the scenario information
+            self.df_PVSystems["PV Bus"] = df_buses["Bus"]
+            self.df_PVSystems["BusNodes"] = df_buses["BusNodes"]
+            self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
+            self.df_PVSystems["kVA"] = self.kVA_list
+            self.df_PVSystems["pf"] = self.pf_list
+            self.df_PVSystems["kvarlimit"] = self.kvarlimit_list
+            self.df_PVSystems["pctPmpp"] = self.pctPmpp_list
+            self.df_PVSystems["wattPriority"] = self.wattPriority_list
+            self.df_PVSystems["pfPriority"] = self.pfPriority_list
+            self.df_PVSystems["Smart Functions"] = self.mode_list
+            self.df_PVSystems["VV_RefReactivePower"] = self.vv_RefReactivePower_list
+            self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
+            self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
 
+            # Stores it in case this scenarios is used in another condition
+            self.scenarios_fixed_dic[k] = self.df_PVSystems
+
+            # In the last scenarios, the dataframe with all scenarios informations is created
             if k == (self.numberScenarios - 1):
-                self.df_buses_scenarios = pd.concat(self.dic_buses_scenarios, axis=1)
+                self.df_scenarios_fixed = pd.concat(self.scenarios_fixed_dic, axis=1)
 
+        # Conditions use the same scenarios from the base one
         elif fixed in Settings.list_true:
-            df_buses = df_buses_fixed[k]
+            self.df_PVSystems = df_scenarios_fixed[k]
 
-        self.df_PVSystems["PV Bus"] = df_buses["Bus"]
-        self.df_PVSystems["BusNodes"] = df_buses["BusNodes"]
-        self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
-        self.df_PVSystems["kVA"] = self.kVA_list
-        self.df_PVSystems["pf"] = self.pf_list
-        self.df_PVSystems["kvarlimit"] = self.kvarlimit_list
-        self.df_PVSystems["pctPmpp"] = self.pctPmpp_list
-        self.df_PVSystems["wattPriority"] = self.wattPriority_list
-        self.df_PVSystems["pfPriority"] = self.pfPriority_list
-        self.df_PVSystems["Smart Functions"] = self.mode_list
-        self.df_PVSystems["VV_RefReactivePower"] = self.vv_RefReactivePower_list
-        self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
-        self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
-
+        # Runs this scenario
         self.runScenario()
-
-        elapsed_scenario = (timeit.default_timer() - start_basescenario_time) / 60
-
-        print "The Total RunTime of scenario " + str(self.scenarioID) + " is: " + str(elapsed_scenario) + " min"
+        self.get_scenario_results()
 
     def runScenario(self):
 
-        # Compile the Master File
         self.methodologyObj.compile_dss()
-
-        # set PVSystems
         self.methodologyObj.set_pvSystems()
-
-        # set smart function
         self.methodologyObj.set_smartfunction()
+
+        # Start counting the time of the scenario simulation time
+        start_time = timeit.default_timer()
 
         # Solve Snap
         self.methodologyObj.solve_snapshot()
 
+        scenario_total_time = (timeit.default_timer() - start_time)
+        self.scenario_simulation_time.append(scenario_total_time * 1000)
+
+        print "The Total RunTime of scenario " + str(self.scenarioID) + " is: " + str(scenario_total_time) + " s"
+
+    def get_scenario_results(self):
         self.methodologyObj.get_scenario_results()
 
     def get_results(self):
@@ -247,7 +265,10 @@ class Settings(object):
 
         # Inverter smart functions
         if self.simulationMode == "SnapShot":
-            mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
+            if self.df_scenario_options["Fixed"]["Smart Functions"] in Settings.list_false:
+                mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
+            else:
+                mode = ['voltvar']
         else:
             mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
 

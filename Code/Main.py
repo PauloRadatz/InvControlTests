@@ -18,6 +18,9 @@ import random
 
 class Main(object):
     ConditionList = []
+    list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
+    list_default = ["Default", "default", "d"]
+    list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
 
     @classmethod
     def ask_files(cls):
@@ -30,9 +33,10 @@ class Main(object):
         #dssFileName = tkFileDialog.askopenfilename()
         dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\IEEE13Nodeckt.dss"
 
-        print "\nPlease select the Conditions (*.csv file)."
+        print "\nPlease select the definitions of the Conditions (*.csv file)."
         #conditionConfiguration_file = tkFileDialog.askopenfilename()
         conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input.csv"
+        conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input_13.csv"
 
         print "\nPlease select the Output Folder."
         #outputFolder = tkFileDialog.askdirectory()
@@ -50,20 +54,6 @@ class Main(object):
 
     def __init__(self, fileName, dssFileName, outputFolder):
 
-        # sqlite_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\Results.db"
-
-        df_conditions_results_dic = pd.DataFrame()
-
-        methodologyObj = Methodology.Methodology()
-
-        # OpenDSS Model Directory
-        self.OpenDSS_folder_path = os.path.dirname(dssFileName)
-
-        # Options
-        df_options = pd.read_csv(os.path.dirname(fileName) + r"\Options.csv", engine="python").set_index("Option")
-        # Scenario Options file
-        df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
-
         # Data and time of the start of simulation
         startSimulation = str(datetime.datetime.now())
 
@@ -72,8 +62,20 @@ class Main(object):
 
         print("Simulation starts: " + str(startSimulation))
 
+        # Scenario Options file
+        df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
         # Read the conditions file
         df_conditions = pd.read_csv(fileName, engine="python")
+
+        # Creates a methodology object
+        methodologyObj = Methodology.Methodology()
+
+        # OpenDSS Model Directory
+        self.OpenDSS_folder_path = os.path.dirname(dssFileName)
+
+        # DataFrame that will store scenarios of the first (base) condition
+        df_scenarios_fixed = ""
+        base = "yes"
 
         # Creates condition Objects
         for index, row in df_conditions.iterrows():
@@ -82,61 +84,64 @@ class Main(object):
             conditionObject = Scenario.Settings(dssFileName, row, methodologyObj, df_scenario_options)
             Main.ConditionList.append(conditionObject)
 
-        df_buses_fixed = ""
-        base = "yes"
-
         # Runs Connection Objects
         for condition in Main.ConditionList:
             print(u"\n-----------------Running Condition ID " + str(condition.conditionID) + u"--------------------")
-            print(u"Penetration Level (%) = " + str(condition.penetrationLevel))
 
-            condition_outputFolder = outputFolder + "/" + str(condition.conditionID)
-
+            # Sets condition outputfolder
+            condition_outputFolder = outputFolder + "/Condition_" + str(condition.conditionID)
             if not os.path.exists(condition_outputFolder):
                 os.makedirs(condition_outputFolder)
 
+            # Creates the database that stores the configurations of the scenarios with Max control iterations issue
             sqlite_file = condition_outputFolder + r"\Scenarios_issue.db"
 
             # Start timing of the connection ID simulation
             start_time_connection = timeit.default_timer()
 
+            # ------------ Main Process ------------#
             for i in range(condition.numberScenarios):
-                condition.process(i, df_buses_fixed, base, df_options["Value"]["Scenarios Buses"])
+                # Runs each scenario
+                condition.process(i, df_scenarios_fixed, base, df_scenario_options["Fixed"]["ScenariosFixed"])
+
+            # Saves the scenarios informations to be used in the following conditions.
+            # So, df_scenarios_fixed is created through the first condition
             if base == "yes":
-                df_buses_fixed = condition.df_buses_scenarios
+                df_scenarios_fixed = condition.df_scenarios_fixed
                 base = "no"
 
-            condition.get_results()
+            # Simulation time of the condition
+            condition_simulation_time = str(timeit.default_timer() - start_time_connection)
+            print(u"\nSimulation time Condition ID " + str(condition.conditionID) + " = " + condition_simulation_time + u" s")
 
-            print(u"\nSimulation time Condition ID " + str(condition.conditionID) + " = " + str((timeit.default_timer() - start_time_connection)/60) + u" min")
+            # Gets results
+            condition.get_results()
 
             # Makes a database Condition
             conn = sqlite3.connect(sqlite_file)
             print(u"\n-----------------Reading Condition ID " + str(condition.conditionID) + u" Results--------------------")
 
-            for issue in condition.df_issue_dic:
-                condition.df_issue_dic[issue].to_sql(str(issue), conn, if_exists="replace")
-                condition.df_issue_dic[issue].to_csv(condition_outputFolder + "/" + str(issue) + ".csv")
+            df_scenarios_results = pd.DataFrame().from_dict(methodologyObj.resultsObj.df_scenarios_results)
+
+            df_scenarios_results.to_csv(condition_outputFolder + r"\scenarios_results.csv", index=False)
 
 
-            ##df_conditions_results_dic[str(condition.conditionID)] = pd.DataFrame(condition.scenarioResultsList)
-
-            # https://andypicke.github.io/sql_pandas_post/    , chunksize=1000, dtype={"Col_21": String}
-            ##df_conditions_results_dic[str(condition.conditionID)].to_sql(condition.feederName + " C" + str(condition.conditionID), conn, if_exists="replace", index_label="Scenario ID")
+            if condition.export_scenario_issue in Main.list_true:
+                for issue in condition.df_issue_dic:
+                    condition.df_issue_dic[issue].to_sql("scenario_" + str(issue), conn, if_exists="replace")
+                    condition.df_issue_dic[issue].to_csv(condition_outputFolder + "/scenario_" + str(issue) + ".csv")
 
             conn.close()
 
         df_condition_results = pd.DataFrame().from_dict(methodologyObj.resultsObj.sr_condition_statistics_results_dic)
 
-        df_condition_results.T.to_csv(outputFolder + r"\condition_results.csv", index=False)
+        df_condition_results.T.to_csv(outputFolder + r"\conditions_results.csv", index=False)
         df_scenario_options.to_csv(outputFolder + r"\Scenario_options.csv")
         df_conditions.to_csv(outputFolder + r"\conditions_options.csv")
 
-
-
         # Total time of the simulation of this connection
-        elapsed = (timeit.default_timer() - start_time) / 60 / 60
-        print("The Total RunTime is: " + str(elapsed) + " Hours")
+        elapsed = (timeit.default_timer() - start_time) / 60
+        print("The Total RunTime is: " + str(elapsed) + " min")
 
 
 if __name__ == '__main__':

@@ -1,12 +1,6 @@
 # encoding: utf-8
 
-
-
-import math
 import pandas as pd
-import numpy as np
-import traceback
-
 
 class Results:
 
@@ -16,6 +10,7 @@ class Results:
         self.methodologyObj = methodologyObj
 
         self.sr_condition_statistics_results_dic = {}
+        self.df_scenarios_results_dic = {}
 
 
 
@@ -24,28 +19,45 @@ class Results:
 
 
 
-    def get_condition_results(self):
-        self.df_condition_results = pd.DataFrame()
+    def get_scenarios_results(self):
+        self.df_scenarios_results = pd.DataFrame()
 
-        self.df_condition_results["Max Control Iterations"] = self.condition.controlIterations
+       # self.df_scenarios_results["Scenario ID"] = range(self.condition.scenarioID)
+        self.df_scenarios_results["# Control Iterations"] = self.condition.controlIterations
+        self.df_scenarios_results["Max Voltage (pu)"] = self.condition.maxVoltage
+        self.df_scenarios_results["Simulation Time (ms)"] = self.condition.scenario_simulation_time
+        self.df_scenarios_results["Max feeder Demand without PVs (kW)"] = self.condition.feeder_demand
+        self.df_scenarios_results["Max feeder Demand with PVs (kW)"] = self.condition.scenario_feeder_demand
+        self.df_scenarios_results["Penetration Level (kW)"] = self.condition.penetrationLevel
 
-    def get_maxControlIter_statistics(self):
+        self.df_scenarios_results_without_issue = self.df_scenarios_results[self.df_scenarios_results["# Control Iterations"] != self.condition.maxControlIter]
+        self.df_scenarios_results_with_issue = self.df_scenarios_results[self.df_scenarios_results["# Control Iterations"] == self.condition.maxControlIter]
 
-        sr_maxcontroliter = pd.Series(self.df_condition_results["Max Control Iterations"])
+        self.df_scenarios_results_dic[self.condition.conditionID] = self.df_scenarios_results
 
-        num_issue = sr_maxcontroliter.isin([self.condition.maxControlIter]).sum()
+    def get_statistics(self):
 
-        sr_num_noissue_maxcontroliter = sr_maxcontroliter.where(sr_maxcontroliter.isin([self.condition.maxControlIter]) == False).dropna()
+        self.sr_condition_results = pd.Series()
 
-        sr_maxControlIter = sr_num_noissue_maxcontroliter.describe()
+        sr_maxControlIter = pd.Series(self.df_scenarios_results_without_issue["# Control Iterations"]).describe()
+        sr_simulationTime = pd.Series(self.df_scenarios_results_without_issue["Simulation Time (ms)"]).describe()
 
-        self.maxControlIter_count = sr_maxControlIter["count"]
-        self.maxControlIter_mean = sr_maxControlIter["mean"]
-        self.maxControlIter_std = sr_maxControlIter["std"]
-        self.maxControlIter_min = sr_maxControlIter["min"]
-        self.maxControlIter_max = sr_maxControlIter["max"]
+        self.sr_condition_results["Condition ID"] = self.condition.conditionID
+        self.sr_condition_results["# Scenarios"] = self.condition.numberScenarios
+        self.sr_condition_results["Scenarios without Issue (%)"] = sr_maxControlIter["count"] * 100.0 / self.condition.numberScenarios
+        self.sr_condition_results["mean - # Control Iteration"] = sr_maxControlIter["mean"]
+        self.sr_condition_results["std - # Control Iteration"] = sr_maxControlIter["std"]
+        self.sr_condition_results["min - # Control Iteration"] = sr_maxControlIter["min"]
+        self.sr_condition_results["max - # Control Iteration"] = sr_maxControlIter["max"]
+        self.sr_condition_results["mean - Simulation Time (ms)"] = sr_simulationTime["mean"]
+        self.sr_condition_results["std - Simulation Time (ms)"] = sr_simulationTime["std"]
+        self.sr_condition_results["min - Simulation Time (ms)"] = sr_simulationTime["min"]
+        self.sr_condition_results["max - Simulation Time (ms)"] = sr_simulationTime["max"]
+        self.sr_condition_results["DeltaP_factor"] = self.condition.deltaP_factor
+        self.sr_condition_results["DeltaQ_factor"] = self.condition.deltaQ_factor
 
-        self.sr_condition_statistics_results_dic[self.condition.conditionID] = sr_maxControlIter
+
+        self.sr_condition_statistics_results_dic[self.condition.conditionID] = self.sr_condition_results
 
     def get_config_issued(self):
 

@@ -15,6 +15,9 @@ import Results
 
 
 class Methodology(object):
+    list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
+    list_default = ["Default", "default", "d"]
+    list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
 
     def __init__(self):
 
@@ -22,8 +25,8 @@ class Methodology(object):
         self.resultsObj = Results.Results(self)
 
     def set_condition(self, condition):
-        self.condition = condition
 
+        self.condition = condition
         self.resultsObj.set_condition(condition)
 
     def get_feeder_demand(self):
@@ -125,8 +128,8 @@ class Methodology(object):
         y_curve = "[1 1 0 0 0 -1 -1]"
 
         # Volt-watt Curve
-        y_curveW = "[1 1 0]"
-        x_curveW = "[1 1.05 1.1]"
+        y_curveW = "[1 1 0 0]"
+        x_curveW = "[1 1.05 1.1 1.2]"
 
         line1 = "New XYcurve.generic npts=7 yarray=" + y_curve + " xarray=" + x_curve
         line2 = "New XYcurve.genericW npts=4 yarray=" + y_curveW + " xarray=" + x_curveW
@@ -180,15 +183,18 @@ class Methodology(object):
 
         print self.dss.dssSolution.ControlIterations
 
-        if self.dss.dssSolution.ControlIterations == self.condition.maxControlIter:
+        if self.dss.dssSolution.ControlIterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
             self.resultsObj.get_config_issued()
+
         self.condition.controlIterations.append(self.dss.dssSolution.ControlIterations)
+
+        self.condition.maxVoltage.append(max(self.dss.dssCircuit.AllBusVmagPu))
+
+        self.condition.scenario_feeder_demand.append(-1 * self.dss.dssCircuit.TotalPower[0])
 
 
     def get_condition_results(self):
 
-        self.resultsObj.get_condition_results()
+        self.resultsObj.get_scenarios_results()
 
-        self.resultsObj.get_maxControlIter_statistics()
-
-        print "here"
+        self.resultsObj.get_statistics()
