@@ -17,7 +17,7 @@ import Results
 class Methodology(object):
     list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
     list_default = ["Default", "default", "d"]
-    list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
+    list_true = ["1", "Yes", "yes", "y", "YES", 1, 1.0]
 
     def __init__(self):
 
@@ -105,6 +105,7 @@ class Methodology(object):
             self.dss.dssCircuit.SetActiveBus(bus)
             kV = self.dss.dssBus.kVBase * sqrt(3)
 
+            #self.condition.df_PVSystems["kV"][index] = kV
 
             line1 = "New line.PV_{} phases=3 bus1={} bus2=PV_sec_{} switch=yes".format(busName, bus, bus)
             line2 = "New transformer.PV_{} phases=3 windings=2 buses=(PV_sec_{} , PV_ter_{}) conns=(wye, wye) kVs=({},0.48) xhl=5.67 %R=0.4726 kVAs=({},{})".format(busName, bus, bus, kV, pv["kVA"], pv["kVA"])

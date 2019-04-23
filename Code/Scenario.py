@@ -148,6 +148,7 @@ class Settings(object):
             # Populates the scenario information
             self.df_PVSystems["PV Bus"] = df_buses["Bus"]
             self.df_PVSystems["BusNodes"] = df_buses["BusNodes"]
+            self.df_PVSystems["kV"] = 0.0
             self.df_PVSystems["Pmpp"] = 1.0 * self.penetrationLevel / self.numberBuses
             self.df_PVSystems["kVA"] = self.kVA_list
             self.df_PVSystems["pf"] = self.pf_list
@@ -197,7 +198,6 @@ class Settings(object):
 
     def get_results(self):
         self.methodologyObj.get_condition_results()
-        print "here"
 
     def set_pvsystem_properties(self):
 
