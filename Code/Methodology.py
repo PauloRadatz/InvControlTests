@@ -21,7 +21,9 @@ class Methodology(object):
 
     def __init__(self):
 
-        self.dss = DSS.DSS()
+        self.dss_communication = None
+
+        self.dss = DSS.DSS(self.dss_communication)
         self.resultsObj = Results.Results(self)
 
         self.dss_command = False #True
@@ -36,7 +38,10 @@ class Methodology(object):
         self.compile_dss()
         self.solve_snapshot()
 
-        self.condition.feeder_demand = -1 * self.dss.dssCircuit.TotalPower[0]
+        if self.dss_communication == "COM":
+            self.condition.feeder_demand = -1 * self.dss.dssCircuit.TotalPower[0]
+        else:
+            self.condition.feeder_demand = -1 * self.dss.get_Circuit_TotalPower()[0]
 
     def get_buses(self):
 
@@ -49,17 +54,24 @@ class Methodology(object):
         self.compile_dss()
         self.solve_snapshot()
 
-        for bus in self.dss.dssCircuit.AllBusNames:
+        if self.dss_communication == "COM":
+            buses = -1 * self.dss.dssCircuit.TotalPower[0]
+        else:
+            buses = self.dss.get_Circuit_AllBusNames()
+
+        for bus in buses:
             busNodes = bus
 
-            self.dss.dssCircuit.SetActiveBus(bus)
+            if self.dss_communication == "COM":
+                self.dss.dssCircuit.SetActiveBus(bus)
+                numNodes = self.dss.dssBus.NumNodes
+                nodes = self.dss.dssBus.Nodes
+            else:
+                self.dss.set_Circuit_ActiveBus_Name(bus)
+                numNodes = self.dss.get_Bus_NumNodes()
+                nodes = self.dss.get_Bus_Nodes()
 
-            numNodes = self.dss.dssBus.NumNodes
             numNodes_list.append(numNodes)
-
-            nodes = self.dss.dssBus.Nodes
-
-            df_buses = pd.DataFrame()
 
             if 1 in nodes:
                 node1_list.append("yes")
@@ -79,7 +91,10 @@ class Methodology(object):
 
             busNodes_list.append(busNodes)
 
-        self.condition.df_buses["Bus"] = self.dss.dssCircuit.AllBusNames
+        if self.dss_communication == "COM":
+            self.condition.df_buses["Bus"] = self.dss.dssCircuit.AllBusNames
+        else:
+            self.condition.df_buses["Bus"] = self.dss.get_Circuit_AllBusNames()
         self.condition.df_buses["BusNodes"] = busNodes_list
         self.condition.df_buses["NumNodes"] = numNodes_list
         self.condition.df_buses["Node1"] = node1_list
@@ -91,19 +106,31 @@ class Methodology(object):
     def compile_dss(self):
 
         # Always a good idea to clear the DSS when loading a new circuit
-        self.dss.dssObj.ClearAll()
+        if self.dss_communication == "COM":
+            self.dss.dssObj.ClearAll()
+        else:
+            # Always a good idea to clear the DSS when loading a new circuit
+            self.dss.clearAll()
+            self.dss.text("clearall")
 
         # Load the given circuit master file into OpenDSS
         line1 = "compile [" + self.condition.dssFileName + "]"
         line2 = "New XYCurve.Eff npts=4 xarray=[.1 .2 .4 1.0] yarray=[1 0.97 0.96 0.95]"
         line3 = "New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1 1 1 1]"
 
-        self.dss.dssText.Command = line1
-        self.dss.dssText.Command = line2
-        self.dss.dssText.Command = line3
+        if self.dss_communication == "COM":
+            self.dss.dssText.Command = line1
+            self.dss.dssText.Command = line2
+            self.dss.dssText.Command = line3
+        else:
+            self.dss.text(line1)
+            self.dss.text(line2)
+            self.dss.text(line3)
 
         if self.dss_command:
             print line1
+            print line2
+            print line3
 
     def set_pvSystems(self):
 
@@ -112,8 +139,12 @@ class Methodology(object):
             busName = pv["PV Bus"]
             bus = pv["BusNodes"]
 
-            self.dss.dssCircuit.SetActiveBus(bus)
-            kV = self.dss.dssBus.kVBase * sqrt(3)
+            if self.dss_communication == "COM":
+                self.dss.dssCircuit.SetActiveBus(bus)
+                kV = self.dss.dssBus.kVBase * sqrt(3)
+            else:
+                self.dss.set_Circuit_ActiveBus_Name(bus)
+                kV = self.dss.get_Bus_kVBase() * sqrt(3)
 
             self.condition.df_PVSystems["kV"][index] = kV
 
@@ -124,12 +155,20 @@ class Methodology(object):
             line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
             line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={}".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
 
-            self.dss.dssText.Command = line1
-            self.dss.dssText.Command = line2
-            self.dss.dssText.Command = line3
-            self.dss.dssText.Command = line4
-            self.dss.dssText.Command = line5
-            self.dss.dssText.Command = line6
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+                self.dss.dssText.Command = line2
+                self.dss.dssText.Command = line3
+                self.dss.dssText.Command = line4
+                self.dss.dssText.Command = line5
+                self.dss.dssText.Command = line6
+            else:
+                self.dss.text(line1)
+                self.dss.text(line2)
+                self.dss.text(line3)
+                self.dss.text(line4)
+                self.dss.text(line5)
+                self.dss.text(line6)
 
             if self.dss_command:
                 print line1
@@ -156,8 +195,12 @@ class Methodology(object):
         line1 = "New XYcurve.generic npts=5 yarray=" + y_curve + " xarray=" + x_curve
         line2 = "New XYcurve.genericW npts=4 yarray=" + y_curveW + " xarray=" + x_curveW
 
-        self.dss.dssText.Command = line1
-        self.dss.dssText.Command = line2
+        if self.dss_communication == "COM":
+            self.dss.dssText.Command = line1
+            self.dss.dssText.Command = line2
+        else:
+            self.dss.text(line1)
+            self.dss.text(line2)
 
         if self.dss_command:
             print line1
@@ -196,24 +239,33 @@ class Methodology(object):
                 line = "New InvControl.feeder" + busName + \
                        " CombiMode=VV_DRC  voltage_curvex_ref=rated RefReactivePower=varMax_watts vvc_curve1=generic DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=0.2 EventLog=No PVSystemList=PVSystem.PV_" + busName
 
-            self.dss.dssText.Command = line
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line
+            else:
+                self.dss.text(line)
 
             if self.dss_command:
                 print line
 
     def solve_snapshot(self):
 
-        self.dss.dssObj.AllowForms = "false"
-
         line1 = "set mode=snap"
         line2 = "set maxcontroliter ={}".format(self.condition.maxControlIter)
         line3 = "set maxiterations=1000"
         line4 = "solve"
 
-        self.dss.dssText.Command = line1
-        self.dss.dssText.Command = line2
-        self.dss.dssText.Command = line3
-        self.dss.dssText.Command = line4
+        if self.dss_communication == "COM":
+            self.dss.dssObj.AllowForms = "false"
+            self.dss.dssText.Command = line1
+            self.dss.dssText.Command = line2
+            self.dss.dssText.Command = line3
+            self.dss.dssText.Command = line4
+
+        else:
+            self.dss.text(line1)
+            self.dss.text(line2)
+            self.dss.text(line3)
+            self.dss.text(line4)
 
         if self.dss_command:
             print line1
@@ -223,16 +275,24 @@ class Methodology(object):
 
     def get_scenario_results(self):
 
-        print self.dss.dssSolution.ControlIterations
+        if self.dss_communication == "COM":
+            control_iterations = self.dss.dssSolution.ControlIterations
+        else:
+            control_iterations = self.dss.get_Solution_ControlIterations()
 
-        if self.dss.dssSolution.ControlIterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
+        print control_iterations
+
+        if control_iterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
             self.resultsObj.get_config_issued()
 
-        self.condition.controlIterations.append(self.dss.dssSolution.ControlIterations)
+        self.condition.controlIterations.append(control_iterations)
 
-        self.condition.maxVoltage.append(max(self.dss.dssCircuit.AllBusVmagPu))
-
-        self.condition.scenario_feeder_demand.append(-1 * self.dss.dssCircuit.TotalPower[0])
+        if self.dss_communication == "COM":
+            self.condition.maxVoltage.append(max(self.dss.dssCircuit.AllBusVmagPu))
+            self.condition.scenario_feeder_demand.append(-1 * self.dss.dssCircuit.TotalPower[0])
+        else:
+            self.condition.maxVoltage.append(max(self.dss.get_Circuit_AllBusVMagPu()))
+            self.condition.scenario_feeder_demand.append(-1 * self.dss.get_Circuit_TotalPower()[0])
 
 
     def get_condition_results(self):
