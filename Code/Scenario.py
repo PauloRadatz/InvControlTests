@@ -50,7 +50,8 @@ class Settings(object):
         self.feederName = str(row["Feeder Name"])
         self.conditionID = str(row["Condition ID"])
         self.numberScenarios = int(row["Number of Scenarios"])
-        self.percentagePenetrationLevel = row["Penetration Level (%)"]
+        #self.percentagePenetrationLevel = row["Penetration Level (%)"]
+        self.penetrationLevel_read = row["Penetration Level (kW)"]
         self.percentageBuses = row["Buses with PVSystem (%)"]
         self.maxControlIter = row["Max Control Iterations"]
         self.simulationMode = row["Simulation Mode"]
@@ -89,7 +90,8 @@ class Settings(object):
         self.methodologyObj.get_feeder_demand()
 
         # defines the penetration level in kW
-        self.penetrationLevel = self.percentagePenetrationLevel / 100.0 * self.feeder_demand
+        #self.penetrationLevel = self.percentagePenetrationLevel / 100.0 * self.feeder_demand
+        self.penetrationLevel = self.penetrationLevel_read
 
         # FOR NOW IT HAS ONLY THE OPTION FOR THREE-PHASE BUSES.
         # HERE WE NEED TO INCLUDE OTHER OPTIONS THAT WILL BE SET IN THE CONDITION INPUT
@@ -123,7 +125,7 @@ class Settings(object):
         self.pf_list = []
 
         # InvControl Lists
-        self.vv_RefReactivePower_list = []
+        self.RefReactivePower_list = []
         self.voltage_curvex_ref_list = []
         self.voltwattYAxis_list = []
 
@@ -157,7 +159,7 @@ class Settings(object):
             self.df_PVSystems["wattPriority"] = self.wattPriority_list
             self.df_PVSystems["pfPriority"] = self.pfPriority_list
             self.df_PVSystems["Smart Functions"] = self.mode_list
-            self.df_PVSystems["VV_RefReactivePower"] = self.vv_RefReactivePower_list
+            self.df_PVSystems["RefReactivePower"] = self.RefReactivePower_list
             self.df_PVSystems["voltage_curvex_ref"] = self.voltage_curvex_ref_list
             self.df_PVSystems["voltwattYAxis"] = self.voltwattYAxis_list
 
@@ -267,18 +269,22 @@ class Settings(object):
         if self.simulationMode == "SnapShot":
             if self.df_scenario_options["Fixed"]["Smart Functions"] in Settings.list_false:
                 mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
+            elif self.df_scenario_options["Fixed"]["Smart Functions"] == "Q":
+                mode = ['PF', 'voltvar']
+            elif self.df_scenario_options["Fixed"]["Smart Functions"] == "P":
+                mode = ['voltwatt']
             else:
                 mode = ['voltvar']
         else:
             mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
 
-        # vv_RefReactivePower property
-        if self.df_scenario_options["Fixed"]["vv_RefReactivePower"] in Settings.list_false:
-            vv_RefReactivePower = ['VARAVAL_WATTS', 'VARMAX_WATTS']
-        elif self.df_scenario_options["Value"]["vv_RefReactivePower"] in Settings.list_default:
-            vv_RefReactivePower = ['VARMAX_WATTS']
+        # RefReactivePower property
+        if self.df_scenario_options["Fixed"]["RefReactivePower"] in Settings.list_false:
+            RefReactivePower = ['VARAVAL', 'VARMAX']
+        elif self.df_scenario_options["Value"]["RefReactivePower"] in Settings.list_default:
+            RefReactivePower = ['VARAVAL']
         else:
-            vv_RefReactivePower = []
+            RefReactivePower = ['VARAVAL']
 
         # voltage_curvex_ref property
         if self.df_scenario_options["Fixed"]["voltage_curvex_ref"] in Settings.list_false:
@@ -298,6 +304,6 @@ class Settings(object):
 
 
         self.mode_list.append(mode[randint(0, len(mode))])
-        self.vv_RefReactivePower_list.append(vv_RefReactivePower[randint(0, len(vv_RefReactivePower))])
+        self.RefReactivePower_list.append(RefReactivePower[randint(0, len(RefReactivePower))])
         self.voltage_curvex_ref_list.append(voltage_curvex_ref[randint(0, len(voltage_curvex_ref))])
         self.voltwattYAxis_list.append(voltwattYAxis[randint(0, len(voltwattYAxis))])

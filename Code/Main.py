@@ -32,17 +32,20 @@ class Main(object):
         print "\nPlease select a OpenDSS Feeder Model."
         #dssFileName = tkFileDialog.askopenfilename()
         dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\IEEE13Nodeckt.dss"
-        #dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+        dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+        #dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
 
         print "\nPlease select the definitions of the Conditions (*.csv file)."
         #conditionConfiguration_file = tkFileDialog.askopenfilename()
         conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input.csv"
         #conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input_13.csv"
-        #conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\input_Creelman.csv"
+        conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor.csv"
+        #conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\input_123.csv"
 
         print "\nPlease select the Output Folder."
         #outputFolder = tkFileDialog.askdirectory()
-        outputFolder = r"D:\test-1"
+        #outputFolder = r"D:\test-1"
+        outputFolder = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor"
 
         try:
             config = cls(conditionConfiguration_file, dssFileName, outputFolder)
@@ -65,7 +68,9 @@ class Main(object):
         print("Simulation starts: " + str(startSimulation))
 
         # Scenario Options file
-        df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
+        #df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
+        df_scenario_options = pd.read_csv("D:\Projetos_GitHub\InvControlTests\Scenario_options.csv", engine="python").set_index("Option")
+
         # Read the conditions file
         df_conditions = pd.read_csv(fileName, engine="python")
 

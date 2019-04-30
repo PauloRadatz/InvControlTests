@@ -1,0 +1,13 @@
+Option,Fixed,Value
+kVA,No,Default
+pf,No,Default
+kvarlimit,No,Default
+pctPmpp,No,Default
+wattPriority,No,Default
+pfPriority,No,Default
+Smart Functions,P,Default
+RefReactivePower,no,Default
+voltage_curvex_ref,No,Default
+voltwattYAxis,No,Default
+ScenariosBusesFixed,no
+ScenariosFixed,yes
