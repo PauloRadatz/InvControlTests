@@ -5,7 +5,7 @@ kvarlimit,No,Default
 pctPmpp,No,Default
 wattPriority,No,Default
 pfPriority,No,Default
-Smart Functions,no,Default
+Smart Functions,P,Default
 RefReactivePower,no,Default
 voltage_curvex_ref,No,Default
 voltwattYAxis,No,Default

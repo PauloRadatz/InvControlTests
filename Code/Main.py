@@ -17,7 +17,6 @@ import random
 
 
 class Main(object):
-    ConditionList = []
     list_false = ["0", "No", "no", "n", "NO", 0, 0.0]
     list_default = ["Default", "default", "d"]
     list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
@@ -57,7 +56,9 @@ class Main(object):
             tkMessageBox.showwarning("", "Incomplete")
         return
 
-    def __init__(self, fileName, dssFileName, outputFolder):
+    def __init__(self, fileName, dssFileName, outputFolder, scenario):
+
+        ConditionList = []
 
         # Data and time of the start of simulation
         startSimulation = str(datetime.datetime.now())
@@ -69,7 +70,7 @@ class Main(object):
 
         # Scenario Options file
         #df_scenario_options = pd.read_csv(os.path.dirname(fileName) + r"\Scenario_options.csv", engine="python").set_index("Option")
-        df_scenario_options = pd.read_csv("D:\Projetos_GitHub\InvControlTests\Scenario_options.csv", engine="python").set_index("Option")
+        df_scenario_options = pd.read_csv("D:\Projetos_GitHub\InvControlTests\Scenario_options_" + scenario + ".csv", engine="python").set_index("Option")
 
         # Read the conditions file
         df_conditions = pd.read_csv(fileName, engine="python")
@@ -89,10 +90,10 @@ class Main(object):
             print(u"Scenario ID " + str(row[1]) + u" Created")
             # Each connection is an object of the Settings class
             conditionObject = Scenario.Settings(dssFileName, row, methodologyObj, df_scenario_options)
-            Main.ConditionList.append(conditionObject)
+            ConditionList.append(conditionObject)
 
         # Runs Connection Objects
-        for condition in Main.ConditionList:
+        for condition in ConditionList:
             print(u"\n-----------------Running Condition ID " + str(condition.conditionID) + u"--------------------")
 
             # Sets condition outputfolder
@@ -150,7 +151,27 @@ class Main(object):
         elapsed = (timeit.default_timer() - start_time) / 60
         print("The Total RunTime is: " + str(elapsed) + " min")
 
-
 if __name__ == '__main__':
-    Main.ask_files()
+    # Main.ask_files()
+
+    dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+    input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
+    # cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All"]
+    cases_list = [r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
+                  r"\7-50_100_Q",   r"\8-50_100_P",   r"\9-50_100_All",
+                  r"\10-100_10_Q",  r"\11-100_10_P",  r"\12-100_10_All",
+                  r"\13-100_50_Q",  r"\14-100_50_P",  r"\15-100_50_All",
+                  r"\16-100_100_Q", r"\17-100_100_P", r"\18-100_100_All",
+                  r"\19-150_10_Q",  r"\20-150_10_P",  r"\21-150_10_All",
+                  r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
+                  r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All",]
+
+    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
+
+    for case in cases_list:
+        fileName = input + case + ".csv"
+        outputfolder = output + case
+        scenario = case.split("_")[-1]
+        Main(fileName, dssFileName, outputfolder, scenario)
+
 

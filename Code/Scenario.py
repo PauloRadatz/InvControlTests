@@ -107,6 +107,10 @@ class Settings(object):
         # Dictionary used to store the scenarios of the base connection to be used in the others ones
         self.scenarios_fixed_dic = {}
 
+    def set_methodology(self, metodology):
+
+        self.methodologyObj = metodology
+
     def process(self, k, df_scenarios_fixed, base, fixed):
 
         # Actives this condition object into the methodology object
