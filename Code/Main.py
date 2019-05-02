@@ -155,18 +155,24 @@ if __name__ == '__main__':
     # Main.ask_files()
 
     dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+    dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+
+
     input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
-    # cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All"]
-    cases_list = [r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
+    input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
+    cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All",
+                  r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
                   r"\7-50_100_Q",   r"\8-50_100_P",   r"\9-50_100_All",
                   r"\10-100_10_Q",  r"\11-100_10_P",  r"\12-100_10_All",
                   r"\13-100_50_Q",  r"\14-100_50_P",  r"\15-100_50_All",
                   r"\16-100_100_Q", r"\17-100_100_P", r"\18-100_100_All",
                   r"\19-150_10_Q",  r"\20-150_10_P",  r"\21-150_10_All",
                   r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
-                  r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All",]
+                  r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
+
 
     output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
+    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
 
     for case in cases_list:
         fileName = input + case + ".csv"
