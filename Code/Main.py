@@ -56,7 +56,7 @@ class Main(object):
             tkMessageBox.showwarning("", "Incomplete")
         return
 
-    def __init__(self, fileName, dssFileName, outputFolder, scenario):
+    def __init__(self, fileName, dssFileName, outputFolder, outputFolder_temp, scenario):
 
         ConditionList = []
 
@@ -76,7 +76,7 @@ class Main(object):
         df_conditions = pd.read_csv(fileName, engine="python")
 
         # Creates a methodology object
-        methodologyObj = Methodology.Methodology()
+        methodologyObj = Methodology.Methodology(outputFolder_temp)
 
         # OpenDSS Model Directory
         self.OpenDSS_folder_path = os.path.dirname(dssFileName)
@@ -84,6 +84,9 @@ class Main(object):
         # DataFrame that will store scenarios of the first (base) condition
         df_scenarios_fixed = ""
         base = "yes"
+
+        if not os.path.exists(outputFolder_temp):
+            os.makedirs(outputFolder_temp)
 
         # Creates condition Objects
         for index, row in df_conditions.iterrows():
@@ -155,11 +158,12 @@ if __name__ == '__main__':
     # Main.ask_files()
 
     dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
-    #dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+    dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+
 
 
     input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
-    #input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
+    input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
     cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All",
                   r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
                   r"\7-50_100_Q",   r"\8-50_100_P",   r"\9-50_100_All",
@@ -170,24 +174,19 @@ if __name__ == '__main__':
                   r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
                   r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
 
-
-
-    cases_list = [r"\8-50_100_P", r"\9-50_100_All",
-                  r"\10-100_10_Q", r"\11-100_10_P", r"\12-100_10_All",
-                  r"\13-100_50_Q", r"\14-100_50_P", r"\15-100_50_All",
-                  r"\16-100_100_Q", r"\17-100_100_P", r"\18-100_100_All",
-                  r"\19-150_10_Q", r"\20-150_10_P", r"\21-150_10_All",
-                  r"\22-150_50_Q", r"\23-150_50_P", r"\24-150_50_All",
-                  r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
-
+    #cases_list = [r"\100-50_10_Q"]
 
     output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
-    #output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
+    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
+
+    output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\Creelman"
+    output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\123Bus"
 
     for case in cases_list:
         fileName = input + case + ".csv"
         outputfolder = output + case
+        outputfolder_temp = output_temp + case
         scenario = case.split("_")[-1]
-        Main(fileName, dssFileName, outputfolder, scenario)
+        Main(fileName, dssFileName, outputfolder, outputfolder_temp, scenario)
 
 

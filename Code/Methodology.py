@@ -19,9 +19,12 @@ class Methodology(object):
     list_default = ["Default", "default", "d"]
     list_true = ["1", "Yes", "yes", "y", "YES", 1, 1.0]
 
-    def __init__(self):
+    def __init__(self, outputFolder_temp):
 
         self.dss_communication = None
+        self.dss_redirect = True
+
+        self.outputFolder_temp = outputFolder_temp
 
         self.dss = DSS.DSS(self.dss_communication)
         self.resultsObj = Results.Results(self)
@@ -35,7 +38,7 @@ class Methodology(object):
 
     def get_feeder_demand(self):
 
-        self.compile_dss()
+        self.compile_dss(-1)
         self.solve_snapshot()
 
         if self.dss_communication == "COM":
@@ -51,7 +54,7 @@ class Methodology(object):
         node3_list = []
         busNodes_list = []
 
-        self.compile_dss()
+        self.compile_dss(-1)
         self.solve_snapshot()
 
         if self.dss_communication == "COM":
@@ -103,7 +106,11 @@ class Methodology(object):
 
         self.condition.df_buses3 = self.condition.df_buses[(self.condition.df_buses["NumNodes"] == 3) & (self.condition.df_buses["Node1"] == "yes") & (self.condition.df_buses["Node2"] == "yes") & (self.condition.df_buses["Node3"] == "yes")][["Bus", "BusNodes"]]
 
-    def compile_dss(self):
+    def compile_dss(self, scenarioID):
+        if scenarioID != -1:
+            if self.dss_redirect:
+                self.dss_pv = self.outputFolder_temp + "/scenario_" + str(scenarioID) +".dss"
+                self.f = open(self.dss_pv, "w")
 
         # Always a good idea to clear the DSS when loading a new circuit
         if self.dss_communication == "COM":
@@ -118,19 +125,30 @@ class Methodology(object):
         line2 = "New XYCurve.Eff npts=4 xarray=[.1 .2 .4 1.0] yarray=[1 0.97 0.96 0.95]"
         line3 = "New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1 1 1 1]"
 
-        if self.dss_communication == "COM":
-            self.dss.dssText.Command = line1
-            self.dss.dssText.Command = line2
-            self.dss.dssText.Command = line3
-        else:
-            self.dss.text(line1)
-            self.dss.text(line2)
-            self.dss.text(line3)
+        if self.dss_redirect and scenarioID != -1:
+            self.f.write("\n" + "!" + line1)
+            self.f.write("\n" + line2)
+            self.f.write("\n" + line3 + "\n" + "\n")
 
-        if self.dss_command:
-            print line1
-            print line2
-            print line3
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+            else:
+                self.dss.text(line1)
+
+        else:
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+                self.dss.dssText.Command = line2
+                self.dss.dssText.Command = line3
+            else:
+                self.dss.text(line1)
+                self.dss.text(line2)
+                self.dss.text(line3)
+
+            if self.dss_command:
+                print line1
+                print line2
+                print line3
 
     def set_pvSystems(self):
 
@@ -155,20 +173,28 @@ class Methodology(object):
             line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
             line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={}".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
 
-            if self.dss_communication == "COM":
-                self.dss.dssText.Command = line1
-                self.dss.dssText.Command = line2
-                self.dss.dssText.Command = line3
-                self.dss.dssText.Command = line4
-                self.dss.dssText.Command = line5
-                self.dss.dssText.Command = line6
+            if self.dss_redirect:
+                self.f.write("\n" + line1)
+                self.f.write("\n" + line2)
+                self.f.write("\n" + line3)
+                self.f.write("\n" + line4)
+                self.f.write("\n" + line5)
+                self.f.write("\n" + line6 + "\n" + "\n")
             else:
-                self.dss.text(line1)
-                self.dss.text(line2)
-                self.dss.text(line3)
-                self.dss.text(line4)
-                self.dss.text(line5)
-                self.dss.text(line6)
+                if self.dss_communication == "COM":
+                    self.dss.dssText.Command = line1
+                    self.dss.dssText.Command = line2
+                    self.dss.dssText.Command = line3
+                    self.dss.dssText.Command = line4
+                    self.dss.dssText.Command = line5
+                    self.dss.dssText.Command = line6
+                else:
+                    self.dss.text(line1)
+                    self.dss.text(line2)
+                    self.dss.text(line3)
+                    self.dss.text(line4)
+                    self.dss.text(line5)
+                    self.dss.text(line6)
 
             if self.dss_command:
                 print line1
@@ -195,12 +221,16 @@ class Methodology(object):
         line1 = "New XYcurve.generic npts=5 yarray=" + y_curve + " xarray=" + x_curve
         line2 = "New XYcurve.genericW npts=4 yarray=" + y_curveW + " xarray=" + x_curveW
 
-        if self.dss_communication == "COM":
-            self.dss.dssText.Command = line1
-            self.dss.dssText.Command = line2
+        if self.dss_redirect:
+            self.f.write("\n" + line1)
+            self.f.write("\n" + line2 + "\n" + "\n")
         else:
-            self.dss.text(line1)
-            self.dss.text(line2)
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+                self.dss.dssText.Command = line2
+            else:
+                self.dss.text(line1)
+                self.dss.text(line2)
 
         if self.dss_command:
             print line1
@@ -239,13 +269,24 @@ class Methodology(object):
                 line = "New InvControl.feeder" + busName + \
                        " CombiMode=VV_DRC  voltage_curvex_ref=rated RefReactivePower=varMax_watts vvc_curve1=generic DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=0.2 EventLog=No PVSystemList=PVSystem.PV_" + busName
 
-            if self.dss_communication == "COM":
-                self.dss.dssText.Command = line
+            if self.dss_redirect:
+                self.f.write("\n" + line)
             else:
-                self.dss.text(line)
+                if self.dss_communication == "COM":
+                    self.dss.dssText.Command = line
+                else:
+                    self.dss.text(line)
 
             if self.dss_command:
                 print line
+
+        if self.dss_redirect:
+            self.f.close()
+            line_redirect = 'redirect "' + self.dss_pv + '"'
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line_redirect
+            else:
+                self.dss.text(line_redirect)
 
     def solve_snapshot(self):
 

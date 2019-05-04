@@ -184,7 +184,7 @@ class Settings(object):
 
     def runScenario(self):
 
-        self.methodologyObj.compile_dss()
+        self.methodologyObj.compile_dss(self.scenarioID)
         self.methodologyObj.set_pvSystems()
         self.methodologyObj.set_smartfunction()
 
