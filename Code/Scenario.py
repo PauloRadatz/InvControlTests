@@ -133,16 +133,16 @@ class Settings(object):
         self.voltage_curvex_ref_list = []
         self.voltwattYAxis_list = []
 
-        # Scenario information
-        self.df_PVSystems = pd.DataFrame()
-
-        # For each PV deployment, the parameters are set randomly
-        for i in range(self.numberBuses):
-            self.set_pvsystem_properties()
-            self.set_invcontrol_properties()
-
         # If this is a base (1st) condition of the option to have the same scenarios through the conditions are not set
         if base in Settings.list_true or fixed in Settings.list_false:
+
+            # Scenario information
+            self.df_PVSystems = pd.DataFrame()
+
+            # For each PV deployment, the parameters are set randomly
+            for i in range(self.numberBuses):
+                self.set_pvsystem_properties()
+                self.set_invcontrol_properties()
 
             # If the need to have the same buses through all scenarios are not set
             if self.df_scenario_options["Fixed"]["ScenariosBusesFixed"] in Settings.list_false:

@@ -23,6 +23,7 @@ class Methodology(object):
 
         self.dss_communication = None
         self.dss_redirect = True
+        self.dss_redirect_only_first = True
 
         self.outputFolder_temp = outputFolder_temp
 
@@ -107,10 +108,16 @@ class Methodology(object):
         self.condition.df_buses3 = self.condition.df_buses[(self.condition.df_buses["NumNodes"] == 3) & (self.condition.df_buses["Node1"] == "yes") & (self.condition.df_buses["Node2"] == "yes") & (self.condition.df_buses["Node3"] == "yes")][["Bus", "BusNodes"]]
 
     def compile_dss(self, scenarioID):
+        if self.condition.conditionID == "1":
+            self.dss_redirect_only_first = True
+        else:
+            self.dss_redirect_only_first = False
+
         if scenarioID != -1:
             if self.dss_redirect:
                 self.dss_pv = self.outputFolder_temp + "/scenario_" + str(scenarioID) +".dss"
-                self.f = open(self.dss_pv, "w")
+                if self.dss_redirect_only_first:
+                    self.f = open(self.dss_pv, "w")
 
         # Always a good idea to clear the DSS when loading a new circuit
         if self.dss_communication == "COM":
@@ -125,7 +132,7 @@ class Methodology(object):
         line2 = "New XYCurve.Eff npts=4 xarray=[.1 .2 .4 1.0] yarray=[1 0.97 0.96 0.95]"
         line3 = "New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1 1 1 1]"
 
-        if self.dss_redirect and scenarioID != -1:
+        if self.dss_redirect and scenarioID != -1 and self.dss_redirect_only_first:
             self.f.write("\n" + "!" + line1)
             self.f.write("\n" + line2)
             self.f.write("\n" + line3 + "\n" + "\n")
@@ -135,7 +142,7 @@ class Methodology(object):
             else:
                 self.dss.text(line1)
 
-        else:
+        elif not self.dss_redirect:
             if self.dss_communication == "COM":
                 self.dss.dssText.Command = line1
                 self.dss.dssText.Command = line2
@@ -144,6 +151,20 @@ class Methodology(object):
                 self.dss.text(line1)
                 self.dss.text(line2)
                 self.dss.text(line3)
+        elif scenarioID == -1:
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+                self.dss.dssText.Command = line2
+                self.dss.dssText.Command = line3
+            else:
+                self.dss.text(line1)
+                self.dss.text(line2)
+                self.dss.text(line3)
+        else:
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line1
+            else:
+                self.dss.text(line1)
 
             if self.dss_command:
                 print line1
@@ -152,136 +173,140 @@ class Methodology(object):
 
     def set_pvSystems(self):
 
-        for index, pv in self.condition.df_PVSystems.iterrows():
+        if self.dss_redirect_only_first:
 
-            busName = pv["PV Bus"]
-            bus = pv["BusNodes"]
+            for index, pv in self.condition.df_PVSystems.iterrows():
 
-            if self.dss_communication == "COM":
-                self.dss.dssCircuit.SetActiveBus(bus)
-                kV = self.dss.dssBus.kVBase * sqrt(3)
-            else:
-                self.dss.set_Circuit_ActiveBus_Name(bus)
-                kV = self.dss.get_Bus_kVBase() * sqrt(3)
+                busName = pv["PV Bus"]
+                bus = pv["BusNodes"]
 
-            self.condition.df_PVSystems["kV"][index] = kV
+                if self.dss_communication == "COM":
+                    self.dss.dssCircuit.SetActiveBus(bus)
+                    kV = self.dss.dssBus.kVBase * sqrt(3)
+                else:
+                    self.dss.set_Circuit_ActiveBus_Name(bus)
+                    kV = self.dss.get_Bus_kVBase() * sqrt(3)
 
-            line1 = "New line.PV_{} phases=3 bus1={} bus2=PV_sec_{} switch=yes".format(busName, bus, bus)
-            line2 = "New transformer.PV_{} phases=3 windings=2 buses=(PV_sec_{} , PV_ter_{}) conns=(wye, wye) kVs=({},0.48) xhl=5.67 %R=0.4726 kVAs=({},{})".format(busName, bus, bus, kV, pv["kVA"], pv["kVA"])
-            line3 = "makebuslist"
-            line4 = "setkVBase bus=PV_sec_{} kVLL={}".format(busName, kV)
-            line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
-            line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={}".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
+                self.condition.df_PVSystems["kV"][index] = kV
 
-            if self.dss_redirect:
+                line1 = "New line.PV_{} phases=3 bus1={} bus2=PV_sec_{} switch=yes".format(busName, bus, bus)
+                line2 = "New transformer.PV_{} phases=3 windings=2 buses=(PV_sec_{} , PV_ter_{}) conns=(wye, wye) kVs=({},0.48) xhl=5.67 %R=0.4726 kVAs=({},{})".format(busName, bus, bus, kV, pv["kVA"], pv["kVA"])
+                line3 = "makebuslist"
+                line4 = "setkVBase bus=PV_sec_{} kVLL={}".format(busName, kV)
+                line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
+                line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={}".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
+
+                if self.dss_redirect and self.dss_redirect_only_first:
+                    self.f.write("\n" + line1)
+                    self.f.write("\n" + line2)
+                    self.f.write("\n" + line3)
+                    self.f.write("\n" + line4)
+                    self.f.write("\n" + line5)
+                    self.f.write("\n" + line6 + "\n" + "\n")
+                elif not self.dss_redirect:
+                    if self.dss_communication == "COM":
+                        self.dss.dssText.Command = line1
+                        self.dss.dssText.Command = line2
+                        self.dss.dssText.Command = line3
+                        self.dss.dssText.Command = line4
+                        self.dss.dssText.Command = line5
+                        self.dss.dssText.Command = line6
+                    else:
+                        self.dss.text(line1)
+                        self.dss.text(line2)
+                        self.dss.text(line3)
+                        self.dss.text(line4)
+                        self.dss.text(line5)
+                        self.dss.text(line6)
+
+                if self.dss_command:
+                    print line1
+                    print line2
+                    print line3
+                    print line4
+                    print line5
+                    print line6
+
+    def set_smartfunction(self):
+
+        if self.dss_redirect_only_first:
+            # Volt-var Curve
+            x_curve = "[0.5 0.92 0.95 1.0 1.02 1.05 1.5]"
+            y_curve = "[1 1 0 0 0 -1 -1]"
+
+            x_curve = "[0.5 0.95 1.0 1.05 1.5]"
+            y_curve = "[1 1 0 -1 -1]"
+
+            # Volt-watt Curve
+            y_curveW = "[1 1 0 0]"
+            x_curveW = "[1 1.02 1.1 1.2]"
+
+            line1 = "New XYcurve.generic npts=7 yarray=" + y_curve + " xarray=" + x_curve
+            line1 = "New XYcurve.generic npts=5 yarray=" + y_curve + " xarray=" + x_curve
+            line2 = "New XYcurve.genericW npts=4 yarray=" + y_curveW + " xarray=" + x_curveW
+
+            if self.dss_redirect and self.dss_redirect_only_first:
                 self.f.write("\n" + line1)
-                self.f.write("\n" + line2)
-                self.f.write("\n" + line3)
-                self.f.write("\n" + line4)
-                self.f.write("\n" + line5)
-                self.f.write("\n" + line6 + "\n" + "\n")
-            else:
+                self.f.write("\n" + line2 + "\n" + "\n")
+            elif not self.dss_redirect:
                 if self.dss_communication == "COM":
                     self.dss.dssText.Command = line1
                     self.dss.dssText.Command = line2
-                    self.dss.dssText.Command = line3
-                    self.dss.dssText.Command = line4
-                    self.dss.dssText.Command = line5
-                    self.dss.dssText.Command = line6
                 else:
                     self.dss.text(line1)
                     self.dss.text(line2)
-                    self.dss.text(line3)
-                    self.dss.text(line4)
-                    self.dss.text(line5)
-                    self.dss.text(line6)
 
             if self.dss_command:
                 print line1
                 print line2
-                print line3
-                print line4
-                print line5
-                print line6
 
-    def set_smartfunction(self):
+            for index, pv in self.condition.df_PVSystems.iterrows():
 
-        # Volt-var Curve
-        x_curve = "[0.5 0.92 0.95 1.0 1.02 1.05 1.5]"
-        y_curve = "[1 1 0 0 0 -1 -1]"
+                smart_function = pv["Smart Functions"]
+                busName = pv["PV Bus"]
 
-        x_curve = "[0.5 0.95 1.0 1.05 1.5]"
-        y_curve = "[1 1 0 -1 -1]"
+                if smart_function == "PF" or smart_function == "PF_VW":
+                    line = "Edit PVSystem.PV_{} pf={} pfpriority={}".format(busName, pv["pf"], pv["pfPriority"])
 
-        # Volt-watt Curve
-        y_curveW = "[1 1 0 0]"
-        x_curveW = "[1 1.02 1.1 1.2]"
+                elif smart_function == "voltvar":
+                    line = 'New InvControl.{} mode=voltvar voltage_curvex_ref={} vvc_curve1=generic deltaQ_factor={} RefReactivePower={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={}'\
+                        .format(busName, pv["voltage_curvex_ref"], self.condition.deltaQ_factor, pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
+                    #print("n")
 
-        line1 = "New XYcurve.generic npts=7 yarray=" + y_curve + " xarray=" + x_curve
-        line1 = "New XYcurve.generic npts=5 yarray=" + y_curve + " xarray=" + x_curve
-        line2 = "New XYcurve.genericW npts=4 yarray=" + y_curveW + " xarray=" + x_curveW
-
-        if self.dss_redirect:
-            self.f.write("\n" + line1)
-            self.f.write("\n" + line2 + "\n" + "\n")
-        else:
-            if self.dss_communication == "COM":
-                self.dss.dssText.Command = line1
-                self.dss.dssText.Command = line2
-            else:
-                self.dss.text(line1)
-                self.dss.text(line2)
-
-        if self.dss_command:
-            print line1
-            print line2
-
-        for index, pv in self.condition.df_PVSystems.iterrows():
-
-            smart_function = pv["Smart Functions"]
-            busName = pv["PV Bus"]
-
-            if smart_function == "PF" or smart_function == "PF_VW":
-                line = "Edit PVSystem.PV_{} pf={} pfpriority={}".format(busName, pv["pf"], pv["pfPriority"])
-
-            elif smart_function == "voltvar":
-                line = 'New InvControl.{} mode=voltvar voltage_curvex_ref={} vvc_curve1=generic deltaQ_factor={} RefReactivePower={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={}'\
-                    .format(busName, pv["voltage_curvex_ref"], self.condition.deltaQ_factor, pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
-                #print("n")
-
-            elif smart_function == "voltwatt":
-                line = 'New InvControl.{} mode=voltwatt voltage_curvex_ref={} voltwatt_curve=genericW deltaP_factor={} VoltwattYAxis={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={}'\
-                    .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, pv["voltwattYAxis"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance)
-                #print("n")
-            elif smart_function == "DRC":
-                # DRC
-                line = "New InvControl.feeder" + busName + \
-                       " Mode=DYNAMICREACCURR DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=.2 EventLog=yes PVSystemList=PVSystem.PV_" + busName
+                elif smart_function == "voltwatt":
+                    line = 'New InvControl.{} mode=voltwatt voltage_curvex_ref={} voltwatt_curve=genericW deltaP_factor={} VoltwattYAxis={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={}'\
+                        .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, pv["voltwattYAxis"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance)
+                    #print("n")
+                elif smart_function == "DRC":
+                    # DRC
+                    line = "New InvControl.feeder" + busName + \
+                           " Mode=DYNAMICREACCURR DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=.2 EventLog=yes PVSystemList=PVSystem.PV_" + busName
 
 
-            elif smart_function == "VV_VW":
-                line = 'New InvControl.{} combimode=VV_VW voltage_curvex_ref={} vvc_curve1=generic voltwatt_curve=genericW deltaP_factor={} deltaQ_factor={} VoltwattYAxis={} RefReactivePower={} eventlog=no PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={} VarChangeTolerance={}'\
-                    .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, self.condition.deltaQ_factor, pv["voltwattYAxis"], pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance, self.condition.varChangeTolerance)
-                #print("n")
+                elif smart_function == "VV_VW":
+                    line = 'New InvControl.{} combimode=VV_VW voltage_curvex_ref={} vvc_curve1=generic voltwatt_curve=genericW deltaP_factor={} deltaQ_factor={} VoltwattYAxis={} RefReactivePower={} eventlog=no PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={} VarChangeTolerance={}'\
+                        .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, self.condition.deltaQ_factor, pv["voltwattYAxis"], pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance, self.condition.varChangeTolerance)
+                    #print("n")
 
-            elif smart_function == "VV_DRC":
-                #Volt/var and DRC
-                line = "New InvControl.feeder" + busName + \
-                       " CombiMode=VV_DRC  voltage_curvex_ref=rated RefReactivePower=varMax_watts vvc_curve1=generic DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=0.2 EventLog=No PVSystemList=PVSystem.PV_" + busName
+                elif smart_function == "VV_DRC":
+                    #Volt/var and DRC
+                    line = "New InvControl.feeder" + busName + \
+                           " CombiMode=VV_DRC  voltage_curvex_ref=rated RefReactivePower=varMax_watts vvc_curve1=generic DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=0.2 EventLog=No PVSystemList=PVSystem.PV_" + busName
 
-            if self.dss_redirect:
-                self.f.write("\n" + line)
-            else:
-                if self.dss_communication == "COM":
-                    self.dss.dssText.Command = line
-                else:
-                    self.dss.text(line)
+                if self.dss_redirect and self.dss_redirect_only_first:
+                    self.f.write("\n" + line)
+                elif not self.dss_redirect:
+                    if self.dss_communication == "COM":
+                        self.dss.dssText.Command = line
+                    else:
+                        self.dss.text(line)
 
-            if self.dss_command:
-                print line
+                if self.dss_command:
+                    print line
 
         if self.dss_redirect:
-            self.f.close()
+            if self.dss_redirect_only_first:
+                self.f.close()
             line_redirect = 'redirect "' + self.dss_pv + '"'
             if self.dss_communication == "COM":
                 self.dss.dssText.Command = line_redirect
@@ -293,7 +318,9 @@ class Methodology(object):
         line1 = "set mode=snap"
         line2 = "set maxcontroliter ={}".format(self.condition.maxControlIter)
         line3 = "set maxiterations=1000"
-        line4 = "solve"
+        line4 = "batchedit invcontrol..* deltaQ_factor={}".format(self.condition.deltaQ_factor)
+        line5 = "batchedit invcontrol..* deltaP_factor={}".format(self.condition.deltaP_factor)
+        line6 = "solve"
 
         if self.dss_communication == "COM":
             self.dss.dssObj.AllowForms = "false"
@@ -301,18 +328,24 @@ class Methodology(object):
             self.dss.dssText.Command = line2
             self.dss.dssText.Command = line3
             self.dss.dssText.Command = line4
+            self.dss.dssText.Command = line5
+            self.dss.dssText.Command = line6
 
         else:
             self.dss.text(line1)
             self.dss.text(line2)
             self.dss.text(line3)
             self.dss.text(line4)
+            self.dss.text(line5)
+            self.dss.text(line6)
 
         if self.dss_command:
             print line1
             print line2
             print line3
             print line4
+            print line5
+            print line6
 
     def get_scenario_results(self):
 
