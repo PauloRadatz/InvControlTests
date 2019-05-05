@@ -274,7 +274,8 @@ class Settings(object):
             if self.df_scenario_options["Fixed"]["Smart Functions"] in Settings.list_false:
                 mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
             elif self.df_scenario_options["Fixed"]["Smart Functions"] == "Q":
-                mode = ['PF', 'voltvar']
+                #mode = ['PF', 'voltvar']
+                mode = ['voltvar']
             elif self.df_scenario_options["Fixed"]["Smart Functions"] == "P":
                 mode = ['voltwatt']
             else:
