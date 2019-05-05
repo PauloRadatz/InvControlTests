@@ -272,7 +272,7 @@ class Settings(object):
         # Inverter smart functions
         if self.simulationMode == "SnapShot":
             if self.df_scenario_options["Fixed"]["Smart Functions"] in Settings.list_false:
-                mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
+                mode = ['voltvar', 'voltwatt', 'VV_VW', 'PF_VW']
             elif self.df_scenario_options["Fixed"]["Smart Functions"] == "Q":
                 #mode = ['PF', 'voltvar']
                 mode = ['voltvar']
