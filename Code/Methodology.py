@@ -113,6 +113,9 @@ class Methodology(object):
         else:
             self.dss_redirect_only_first = False
 
+        # Run test
+        self.dss_redirect_only_first = False
+
         if scenarioID != -1:
             if self.dss_redirect:
                 self.dss_pv = self.outputFolder_temp + "/scenario_" + str(scenarioID) +".dss"

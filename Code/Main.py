@@ -174,13 +174,20 @@ if __name__ == '__main__':
                   r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
                   r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
 
-    cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All",
-                  r"\4-50_50_Q", r"\5-50_50_P", r"\6-50_50_All"]
+    #cases_list = [r"\2-50_10_P"]
 
-    #cases_list = [r"\100-50_10_Q"]
+    cases_list = [r"\1-50_10_Q",
+                  r"\4-50_50_Q",
+                  r"\7-50_100_Q",
+                  r"\10-100_10_Q",
+                  r"\13-100_50_Q",
+                  r"\16-100_100_Q",
+                  r"\19-150_10_Q",
+                  r"\22-150_50_Q",
+                  r"\25-150_100_Q"]
 
-    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
-    #output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
+    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified2"
+    #output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified2"
 
     output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\Creelman"
     #output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\123Bus"
