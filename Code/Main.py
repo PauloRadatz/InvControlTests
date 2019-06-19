@@ -21,40 +21,40 @@ class Main(object):
     list_default = ["Default", "default", "d"]
     list_true = ["1", "Yes", "yes", "ny", "YES", 1, 1.0]
 
-    @classmethod
-    def ask_files(cls):
-
-        # Way to close the window that appears with no reason
-        root = tk.Tk()
-        root.withdraw()
-
-        print "\nPlease select a OpenDSS Feeder Model."
-        #dssFileName = tkFileDialog.askopenfilename()
-        dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\IEEE13Nodeckt.dss"
-        dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
-        #dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
-
-        print "\nPlease select the definitions of the Conditions (*.csv file)."
-        #conditionConfiguration_file = tkFileDialog.askopenfilename()
-        conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input.csv"
-        #conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input_13.csv"
-        conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor.csv"
-        #conditionConfiguration_file = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\input_123.csv"
-
-        print "\nPlease select the Output Folder."
-        #outputFolder = tkFileDialog.askdirectory()
-        #outputFolder = r"D:\test-1"
-        outputFolder = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor"
-
-        try:
-            config = cls(conditionConfiguration_file, dssFileName, outputFolder)
-            print("Finished" + str(config))
-            tkMessageBox.showinfo("", "Finished")
-        except Exception as e:
-            raise
-            print("Incomplete")
-            tkMessageBox.showwarning("", "Incomplete")
-        return
+    # @classmethod
+    # def ask_files(cls):
+    #
+    #     # Way to close the window that appears with no reason
+    #     root = tk.Tk()
+    #     root.withdraw()
+    #
+    #     print "\nPlease select a OpenDSS Feeder Model."
+    #     #dssFileName = tkFileDialog.askopenfilename()
+    #     dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\IEEE13Nodeckt.dss"
+    #     #dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+    #     #dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+    #
+    #     print "\nPlease select the definitions of the Conditions (*.csv file)."
+    #     #conditionConfiguration_file = tkFileDialog.askopenfilename()
+    #     conditionConfiguration_file = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input.csv"
+    #     #conditionConfiguration_file = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\13Bus\input_13.csv"
+    #     #conditionConfiguration_file = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor.csv"
+    #     #conditionConfiguration_file = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\input_123.csv"
+    #
+    #     print "\nPlease select the Output Folder."
+    #     #outputFolder = tkFileDialog.askdirectory()
+    #     #outputFolder = r"D:\test-1"
+    #     #outputFolder = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Results\Delta_PFactor"
+    #
+    #     try:
+    #         config = cls(conditionConfiguration_file, dssFileName, outputFolder)
+    #         print("Finished" + str(config))
+    #         tkMessageBox.showinfo("", "Finished")
+    #     except Exception as e:
+    #         raise
+    #         print("Incomplete")
+    #         tkMessageBox.showwarning("", "Incomplete")
+    #     return
 
     def __init__(self, fileName, dssFileName, outputFolder, outputFolder_temp, scenario):
 
@@ -157,14 +157,14 @@ class Main(object):
 if __name__ == '__main__':
     # Main.ask_files()
 
-    dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
-    #dssFileName = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+    #dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+    dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
 
 
 
-    input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
-    #input = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
-    cases_list = [r"\1-50_10_Q", r"\2-50_10_P", r"\3-50_10_All",
+    #input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
+    input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
+    cases_list = [r"\1-50_10_Q",    r"\2-50_10_P",    r"\3-50_10_All",
                   r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
                   r"\7-50_100_Q",   r"\8-50_100_P",   r"\9-50_100_All",
                   r"\10-100_10_Q",  r"\11-100_10_P",  r"\12-100_10_All",
@@ -174,23 +174,12 @@ if __name__ == '__main__':
                   r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
                   r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
 
-    #cases_list = [r"\2-50_10_P"]
 
-    cases_list = [r"\1-50_10_Q",
-                  r"\4-50_50_Q",
-                  r"\7-50_100_Q",
-                  r"\10-100_10_Q",
-                  r"\13-100_50_Q",
-                  r"\16-100_100_Q",
-                  r"\19-150_10_Q",
-                  r"\22-150_50_Q",
-                  r"\25-150_100_Q"]
+    #output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified4"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified4"
 
-    output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified2"
-    #output = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified2"
-
-    output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\Creelman"
-    #output_temp = r"G:\Drives de equipe\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\123Bus"
+    #output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\Creelman"
+    output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\123Bus"
 
     for case in cases_list:
         fileName = input + case + ".csv"
