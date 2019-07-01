@@ -134,11 +134,15 @@ class Methodology(object):
         line1 = "compile [" + self.condition.dssFileName + "]"
         line2 = "New XYCurve.Eff npts=4 xarray=[.1 .2 .4 1.0] yarray=[1 0.97 0.96 0.95]"
         line3 = "New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1 1 1 1]"
+        line4 = "New Tshape.Temp npts=24 interval=1 temp=[25 25 25 25 25 25 25 25 35 40 45 50 60 60 55 40 35 30 25 25 25 25 25 25]"
+        line5 = "New Loadshape.Irrad npts=20 sinterval=1 mult=[0.7 0.75 0.8 0.85 0.9 0.96 0.98 1 1 1 1 0.98 0.9 0.9 0.9 0.9 0.8 0.7 0.6 0.5]"
 
         if self.dss_redirect and scenarioID != -1 and self.dss_redirect_only_first:
             self.f.write("\n" + "!" + line1)
             self.f.write("\n" + line2)
-            self.f.write("\n" + line3 + "\n" + "\n")
+            self.f.write("\n" + line3)
+            self.f.write("\n" + line4)
+            self.f.write("\n" + line5 + "\n" + "\n")
 
             if self.dss_communication == "COM":
                 self.dss.dssText.Command = line1
@@ -150,19 +154,27 @@ class Methodology(object):
                 self.dss.dssText.Command = line1
                 self.dss.dssText.Command = line2
                 self.dss.dssText.Command = line3
+                self.dss.dssText.Command = line4
+                self.dss.dssText.Command = line5
             else:
                 self.dss.text(line1)
                 self.dss.text(line2)
                 self.dss.text(line3)
+                self.dss.text(line4)
+                self.dss.text(line5)
         elif scenarioID == -1:
             if self.dss_communication == "COM":
                 self.dss.dssText.Command = line1
                 self.dss.dssText.Command = line2
                 self.dss.dssText.Command = line3
+                self.dss.dssText.Command = line4
+                self.dss.dssText.Command = line5
             else:
                 self.dss.text(line1)
                 self.dss.text(line2)
                 self.dss.text(line3)
+                self.dss.text(line4)
+                self.dss.text(line5)
         else:
             if self.dss_communication == "COM":
                 self.dss.dssText.Command = line1
@@ -173,6 +185,8 @@ class Methodology(object):
                 print line1
                 print line2
                 print line3
+                print line4
+                print line5
 
     def set_pvSystems(self):
 
@@ -197,7 +211,7 @@ class Methodology(object):
                 line3 = "makebuslist"
                 line4 = "setkVBase bus=PV_sec_{} kVLL={}".format(busName, kV)
                 line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
-                line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={}".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
+                line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={} daily=Irrad Tdaily=Temp".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
 
                 if self.dss_redirect and self.dss_redirect_only_first:
                     self.f.write("\n" + line1)
@@ -274,27 +288,23 @@ class Methodology(object):
                 elif smart_function == "voltvar":
                     line = 'New InvControl.{} mode=voltvar voltage_curvex_ref={} vvc_curve1=generic deltaQ_factor={} RefReactivePower={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={}'\
                         .format(busName, pv["voltage_curvex_ref"], self.condition.deltaQ_factor, pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
-                    #print("n")
 
                 elif smart_function == "voltwatt":
                     line = 'New InvControl.{} mode=voltwatt voltage_curvex_ref={} voltwatt_curve=genericW deltaP_factor={} VoltwattYAxis={} eventlog=yes PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={}'\
                         .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, pv["voltwattYAxis"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance)
-                    #print("n")
+
                 elif smart_function == "DRC":
                     # DRC
-                    line = "New InvControl.feeder" + busName + \
-                           " Mode=DYNAMICREACCURR DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=.2 EventLog=yes PVSystemList=PVSystem.PV_" + busName
-
+                    line = 'New InvControl.{} Mode=DYNAMICREACCURR RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=2s EventLog=yes'.\
+                        format(busName, pv["RefReactivePower"], self.condition.deltaQ_factor, busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
 
                 elif smart_function == "VV_VW":
                     line = 'New InvControl.{} combimode=VV_VW voltage_curvex_ref={} vvc_curve1=generic voltwatt_curve=genericW deltaP_factor={} deltaQ_factor={} VoltwattYAxis={} RefReactivePower={} eventlog=no PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} ActivePChangeTolerance={} VarChangeTolerance={}'\
                         .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, self.condition.deltaQ_factor, pv["voltwattYAxis"], pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance, self.condition.varChangeTolerance)
-                    #print("n")
 
                 elif smart_function == "VV_DRC":
-                    #Volt/var and DRC
-                    line = "New InvControl.feeder" + busName + \
-                           " CombiMode=VV_DRC  voltage_curvex_ref=rated RefReactivePower=varMax_watts vvc_curve1=generic DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s  deltaQ_factor=0.2 EventLog=No PVSystemList=PVSystem.PV_" + busName
+                    line = 'New InvControl.{} CombiMode=VV_DRC voltage_curvex_ref={} vvc_curve1=generic RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=2s EventLog=yes '\
+                        .format(busName, pv["voltage_curvex_ref"], pv["RefReactivePower"], self.condition.deltaQ_factor, busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
 
                 if self.dss_redirect and self.dss_redirect_only_first:
                     self.f.write("\n" + line)
@@ -350,6 +360,78 @@ class Methodology(object):
             print line5
             print line6
 
+    def solve_qsts(self):
+
+        control_list = []
+        line1 = "set mode=daily stepsize=1s number=1"
+        line2 = "set maxcontroliter ={}".format(self.condition.maxControlIter)
+        line3 = "set maxiterations=1000"
+        line4 = "batchedit invcontrol..* deltaQ_factor={}".format(self.condition.deltaQ_factor)
+        line5 = "batchedit invcontrol..* deltaP_factor={}".format(self.condition.deltaP_factor)
+        #line4 = "batchedit invcontrol..* deltaQ_factor=0.1"
+        #line5 = "batchedit invcontrol..* deltaP_factor=0.1"
+        line6 = "!solve"
+
+        if self.dss_communication == "COM":
+            self.dss.dssObj.AllowForms = "false"
+            self.dss.dssText.Command = line1
+            self.dss.dssText.Command = line2
+            self.dss.dssText.Command = line3
+            self.dss.dssText.Command = line4
+            self.dss.dssText.Command = line5
+            self.dss.dssText.Command = line6
+
+        else:
+            self.dss.text(line1)
+            self.dss.text(line2)
+            self.dss.text(line3)
+            self.dss.text(line4)
+            self.dss.text(line5)
+            self.dss.text(line6)
+
+        if self.dss_command:
+            print line1
+            print line2
+            print line3
+            print line4
+            print line5
+            print line6
+
+        flag = True
+
+        for h in range(20):
+            line = "solve"
+            if self.dss_communication == "COM":
+                self.dss.dssText.Command = line
+            else:
+                self.dss.text(line)
+
+            if self.dss_communication == "COM":
+                control_iterations = self.dss.dssSolution.ControlIterations
+                control_list.append(control_iterations)
+            else:
+                control_iterations = self.dss.get_Solution_ControlIterations()
+                control_list.append(control_iterations)
+
+            if control_iterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
+                self.resultsObj.get_config_issued()
+                flag = False
+
+        if flag:
+            self.condition.controlIterations.append(sum(control_list))
+
+        print control_list
+        print sum(control_list)
+
+    def get_scenario_results_qsts(self):
+
+        if self.dss_communication == "COM":
+            self.condition.maxVoltage.append(max(self.dss.dssCircuit.AllBusVmagPu))
+            self.condition.scenario_feeder_demand.append(-1 * self.dss.dssCircuit.TotalPower[0])
+        else:
+            self.condition.maxVoltage.append(max(self.dss.get_Circuit_AllBusVMagPu()))
+            self.condition.scenario_feeder_demand.append(-1 * self.dss.get_Circuit_TotalPower()[0])
+
     def get_scenario_results(self):
 
         if self.dss_communication == "COM":
@@ -374,6 +456,10 @@ class Methodology(object):
 
     def get_condition_results(self):
 
-        self.resultsObj.get_scenarios_results()
+        if self.condition.simulationMode == "SnapShot":
+            self.resultsObj.get_scenarios_results()
+            self.resultsObj.get_statistics()
+        else:
+            self.resultsObj.get_scenarios_results_qsts()
+            self.resultsObj.get_statistics_qsts()
 
-        self.resultsObj.get_statistics()

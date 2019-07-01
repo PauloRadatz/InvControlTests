@@ -255,38 +255,186 @@ class Main(object):
         self.plot_P_diff(self.output_list[-1])
         print "here"
 
+class MainQSTS(object):
+
+    def __init__(self, case_dic, output_dic):
+
+        self.case_order = ["c" + str(i + 1) for i in range(27)]
+        self.columns_list = ["Update Deltas", "Not Update Deltas", "0.2", "0.1"]
+
+        self.case_dic = case_dic
+        self.output_dic = output_dic
+
+        self.create_case_order()
+        self.create_dfs()
 
 
+
+    def create_case_order(self):
+        penetration = []
+        buses = []
+        type = []
+        case_list = []
+
+        for case in self.case_dic:
+            case_list.append(case)
+            penetration.append(self.case_dic[case].split("_")[-3].split("-")[-1])
+            buses.append(self.case_dic[case].split("_")[-2])
+            type.append(self.case_dic[case].split("_")[-1])
+
+        dic = {"case": case_list, "penetration": penetration, "buses": buses, "type": type}
+
+        self.df_cases = pd.DataFrame(dic).set_index("case").reindex(self.case_order)[["penetration", "buses", "type"]]
+
+
+    def create_dfs(self):
+
+        case_name = []
+        sr_scenarios_dic = {}
+        sr_iterations_dic = {}
+
+        df_scenarios_dic = {}
+        df_iterations_dic = {}
+
+        for key, output in self.output_dic.items():
+            for case in self.case_dic:
+                sr_scenarios_dic[case] = pd.read_csv(output + self.case_dic[case] + "\conditions_results.csv")[
+                    "Scenarios without Issue (%)"].rename("Scenarios without Issue")
+                sr_iterations_dic[case] = pd.read_csv(output + self.case_dic[case] + "\conditions_results.csv")[
+                    "mean - # Control Iteration"].rename("Control Iteration Mean")
+
+            df_scenarios_dic[key] = pd.concat(sr_scenarios_dic, axis=0).reset_index()
+            df_scenarios_dic[key].set_index("level_0", inplace=True)
+            del df_scenarios_dic[key]['level_1']
+            df_scenarios_dic[key] = df_scenarios_dic[key]["Scenarios without Issue"].reindex(index=self.case_order)
+
+            df_iterations_dic[key] = pd.concat(sr_iterations_dic, axis=0).reset_index()
+            df_iterations_dic[key].set_index("level_0", inplace=True)
+            del df_iterations_dic[key]['level_1']
+            df_iterations_dic[key] = df_iterations_dic[key]["Control Iteration Mean"].reindex(index=self.case_order)
+
+        self.df_scenarios = pd.concat(df_scenarios_dic, axis=1)[["Update Deltas", "Not Update Deltas", "0.2", "0.1"]]
+        self.df_iterations = pd.concat(df_iterations_dic, axis=1)[["Update Deltas", "Not Update Deltas", "0.2", "0.1"]]
+
+        self.df_scenarios[["penetration", "buses", "type"]] = self.df_cases
+        self.df_iterations[["penetration", "buses", "type"]] = self.df_cases
+        #self.df_iterations["case"] = self.df_iterations.index
+
+        print "here"
+
+    def plots(self, output):
+
+        for function in ["Q", "P", "All"]:
+            data_iteration = self.df_iterations[self.df_iterations["type"] == function][self.columns_list]
+            self.box_plot(data_iteration, output, 'C_Box_' + function, function + " functions", "Control Iteration")
+
+            data_scenario = self.df_scenarios[self.df_scenarios["type"] == function][self.columns_list]
+            self.box_plot(data_scenario, output, 'S_Box_' + function, function + " functions", "Scenarios without Issue")
+
+        self.bar_plot(self.df_scenarios[self.columns_list], output, 'S_Bar', None, "Scenarios without Issue")
+        self.bar_plot(self.df_iterations[self.columns_list], output, 'C_Bar', None, "Control Iteration")
+        # for function in ["Q", "P", "All"]:
+        #     data_iteration = self.df_iterations[self.df_iterations["type"] == function][self.columns_list]
+        #     self.bar_plot(data_iteration, output, 'C_Bar_' + function, function + " functions", "Control Iteration")
+        #
+        #     data_scenario = self.df_scenarios[self.df_scenarios["type"] == function][self.columns_list]
+        #     self.bar_plot(data_scenario, output, 'S_Bar_' + function, function + " functions", "Scenarios without Issue")
+
+    def box_plot(self, data, output, name, title, ylabel):
+        sns.boxplot(data=data)
+        #sns.stripplot(data=data, jitter=True, color='k')
+
+        if title:
+            # g.set_titles(title)
+            plt.title(title)
+
+        plt.ylabel(ylabel)
+
+        plt.savefig(
+            output + "\\" + "Figure" + "\\" + name + ".png",
+            dpi=None, facecolor='w', edgecolor='w',
+            orientation='portrait', papertype=None, format=None,
+            transparent=False, bbox_inches="tight", pad_inches=0.1,
+            frameon=None)
+
+        #plt.show()
+
+    def bar_plot(self, data, output, name, title, ylabel):
+        #sns.barplot(data=data)
+        #sns.stripplot(data=data, jitter=True, color='k')
+        data.plot(kind="bar")
+
+        if title:
+            # g.set_titles(title)
+            plt.title(title)
+
+        plt.ylabel(ylabel)
+        plt.legend(bbox_to_anchor=(1.1, 1.05))
+
+        plt.savefig(
+            output + "\\" + "Figure" + "\\" + name + ".png",
+            dpi=None, facecolor='w', edgecolor='w',
+            orientation='portrait', papertype=None, format=None,
+            transparent=False, bbox_inches="tight", pad_inches=0.1,
+            frameon=None)
+
+        #plt.show()
+
+    def box_plot_scenario(self, data):
+        sns.boxplot(data=data)
+
+        plt.ylabel("Scenarios without Issue")
+
+        plt.show()
 
 if __name__ == '__main__':
     sns.set(style="ticks")
     sns.set_context("notebook")
     sns.set_style("whitegrid")
 
+    mode = 'qsts'
+
 
     feeder = "123Bus"
     feeder = "creelman"
 
-    if feeder == "123Bus":
-        output1 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
-        output2 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified4"
-    if feeder == "creelman":
-        output1 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
-        output2 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified4"
+    case_dic = {"c1": r"\1-50_10_Q", "c2": r"\2-50_10_P", "c3": r"\3-50_10_All",
+                "c4": r"\4-50_50_Q", "c5": r"\5-50_50_P", "c6": r"\6-50_50_All",
+                "c7": r"\7-50_100_Q", "c8": r"\8-50_100_P", "c9": r"\9-50_100_All",
+                "c10": r"\10-100_10_Q", "c11": r"\11-100_10_P", "c12": r"\12-100_10_All",
+                "c13": r"\13-100_50_Q", "c14": r"\14-100_50_P", "c15": r"\15-100_50_All",
+                "c16": r"\16-100_100_Q", "c17": r"\17-100_100_P", "c18": r"\18-100_100_All",
+                "c19": r"\19-150_10_Q", "c20": r"\20-150_10_P", "c21": r"\21-150_10_All",
+                "c22": r"\22-150_50_Q", "c23": r"\23-150_50_P", "c24": r"\24-150_50_All",
+                "c25": r"\25-150_100_Q", "c26": r"\26-150_100_P", "c27": r"\27-150_100_All"}
 
-    case_dic = {"c1": r"\1-50_10_Q",        "c2": r"\2-50_10_P",        "c3": r"\3-50_10_All",
-                "c4": r"\4-50_50_Q",        "c5": r"\5-50_50_P",        "c6": r"\6-50_50_All",
-                "c7": r"\7-50_100_Q",       "c8": r"\8-50_100_P",       "c9": r"\9-50_100_All",
-                "c10": r"\10-100_10_Q",     "c11": r"\11-100_10_P",     "c12": r"\12-100_10_All",
-                "c13": r"\13-100_50_Q",     "c14": r"\14-100_50_P",     "c15": r"\15-100_50_All",
-                "c16": r"\16-100_100_Q",    "c17": r"\17-100_100_P",    "c18": r"\18-100_100_All",
-                "c19": r"\19-150_10_Q",     "c20": r"\20-150_10_P",     "c21": r"\21-150_10_All",
-                "c22": r"\22-150_50_Q",     "c23": r"\23-150_50_P",     "c24": r"\24-150_50_All",
-                "c25": r"\25-150_100_Q",    "c26": r"\26-150_100_P",    "c27": r"\27-150_100_All"}
+    if mode == 'snap':
 
-    #case_dic = ["c25": r"\25-150_100_Q"]
+        if feeder == "123Bus":
+            output1 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus"
+            output2 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified4"
+        if feeder == "creelman":
+            output1 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman"
+            output2 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified4"
 
-    a = Main(case_dic, output1, output2)
-    a.plot_individual()
-    a.plot_diff()
 
+        #case_dic = ["c25": r"\25-150_100_Q"]
+
+        a = Main(case_dic, output1, output2)
+        a.plot_individual()
+        a.plot_diff()
+
+    else:
+        output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman"
+        output_aut = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_aut"
+        output_01 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
+        output_02 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_02"
+
+        output_dic = {'Update Deltas': output, 'Not Update Deltas': output_aut, '0.1': output_01, '0.2': output_02}
+
+        a = MainQSTS(case_dic, output_dic)
+
+        a.plots(r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS")
+
+
+        print "here"

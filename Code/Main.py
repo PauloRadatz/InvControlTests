@@ -157,13 +157,15 @@ class Main(object):
 if __name__ == '__main__':
     # Main.ask_files()
 
-    #dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
-    dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
+    dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Creelman\Master_NoPV.dss"
+    #dssFileName = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\123Bus\IEEE123Master.dss"
 
 
 
     #input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\Creelman"
-    input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
+    input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input_QSTS\Creelman"
+    #input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input\123Bus"
+    #input = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Input_QSTS\123Bus"
     cases_list = [r"\1-50_10_Q",    r"\2-50_10_P",    r"\3-50_10_All",
                   r"\4-50_50_Q",    r"\5-50_50_P",    r"\6-50_50_All",
                   r"\7-50_100_Q",   r"\8-50_100_P",   r"\9-50_100_All",
@@ -174,12 +176,18 @@ if __name__ == '__main__':
                   r"\22-150_50_Q",  r"\23-150_50_P",  r"\24-150_50_All",
                   r"\25-150_100_Q", r"\26-150_100_P", r"\27-150_100_All"]
 
+    #output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
+    #output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\123Bus_deltas"
 
-    #output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\Creelman_modified4"
-    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output\123Bus_modified4"
+    output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp_QSTS\Creelman"
+    #output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp_QSTS\123Bus"
 
-    #output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\Creelman"
-    output_temp = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_temp\123Bus"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_NotUpdate"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_Update"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_UpdateP"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_02"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_005"
 
     for case in cases_list:
         fileName = input + case + ".csv"

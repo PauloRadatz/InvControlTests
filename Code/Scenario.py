@@ -180,7 +180,6 @@ class Settings(object):
 
         # Runs this scenario
         self.runScenario()
-        self.get_scenario_results()
 
     def runScenario(self):
 
@@ -192,7 +191,12 @@ class Settings(object):
         start_time = timeit.default_timer()
 
         # Solve Snap
-        self.methodologyObj.solve_snapshot()
+        if self.simulationMode == "SnapShot":
+            self.methodologyObj.solve_snapshot()
+            self.get_scenario_results()
+        else:
+            self.methodologyObj.solve_qsts()
+            self.get_scenario_results_qsts()
 
         scenario_total_time = (timeit.default_timer() - start_time)
         self.scenario_simulation_time.append(scenario_total_time * 1000)
@@ -201,6 +205,9 @@ class Settings(object):
 
     def get_scenario_results(self):
         self.methodologyObj.get_scenario_results()
+
+    def get_scenario_results_qsts(self):
+        self.methodologyObj.get_scenario_results_qsts()
 
     def get_results(self):
         self.methodologyObj.get_condition_results()
@@ -281,7 +288,14 @@ class Settings(object):
             else:
                 mode = ['voltvar']
         else:
-            mode = ['PF', 'voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
+            if self.df_scenario_options["Fixed"]["Smart Functions"] in Settings.list_false:
+                mode = ['voltvar', 'voltwatt', 'VV_VW', 'PF_VW', "DRC", "VV_DRC"]
+            elif self.df_scenario_options["Fixed"]["Smart Functions"] == "Q":
+                mode = ['voltvar', 'VV_VW', "DRC", "VV_DRC"]
+            elif self.df_scenario_options["Fixed"]["Smart Functions"] == "P":
+                mode = ['voltwatt', 'VV_VW', 'PF_VW']
+            else:
+                print "Problems"
 
         # RefReactivePower property
         if self.df_scenario_options["Fixed"]["RefReactivePower"] in Settings.list_false:

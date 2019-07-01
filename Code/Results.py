@@ -35,6 +35,17 @@ class Results:
 
         self.df_scenarios_results_dic[self.condition.conditionID] = self.df_scenarios_results
 
+    def get_scenarios_results_qsts(self):
+        self.df_scenarios_results = pd.DataFrame()
+
+       # self.df_scenarios_results["Scenario ID"] = range(self.condition.scenarioID)
+        self.df_scenarios_results["# Control Iterations"] = self.condition.controlIterations
+
+        self.df_scenarios_results_without_issue = self.df_scenarios_results[self.df_scenarios_results["# Control Iterations"] != self.condition.maxControlIter]
+        self.df_scenarios_results_with_issue = self.df_scenarios_results[self.df_scenarios_results["# Control Iterations"] == self.condition.maxControlIter]
+
+        self.df_scenarios_results_dic[self.condition.conditionID] = self.df_scenarios_results
+
     def get_statistics(self):
 
         self.sr_condition_results = pd.Series()
@@ -53,6 +64,25 @@ class Results:
         self.sr_condition_results["std - Simulation Time (ms)"] = sr_simulationTime["std"]
         self.sr_condition_results["min - Simulation Time (ms)"] = sr_simulationTime["min"]
         self.sr_condition_results["max - Simulation Time (ms)"] = sr_simulationTime["max"]
+        self.sr_condition_results["DeltaP_factor"] = self.condition.deltaP_factor
+        self.sr_condition_results["DeltaQ_factor"] = self.condition.deltaQ_factor
+
+
+        self.sr_condition_statistics_results_dic[self.condition.conditionID] = self.sr_condition_results
+
+    def get_statistics_qsts(self):
+
+        self.sr_condition_results = pd.Series()
+
+        sr_maxControlIter = pd.Series(self.df_scenarios_results_without_issue["# Control Iterations"]).describe()
+
+        self.sr_condition_results["Condition ID"] = self.condition.conditionID
+        self.sr_condition_results["# Scenarios"] = self.condition.numberScenarios
+        self.sr_condition_results["Scenarios without Issue (%)"] = sr_maxControlIter["count"] * 100.0 / self.condition.numberScenarios
+        self.sr_condition_results["mean - # Control Iteration"] = sr_maxControlIter["mean"]
+        self.sr_condition_results["std - # Control Iteration"] = sr_maxControlIter["std"]
+        self.sr_condition_results["min - # Control Iteration"] = sr_maxControlIter["min"]
+        self.sr_condition_results["max - # Control Iteration"] = sr_maxControlIter["max"]
         self.sr_condition_results["DeltaP_factor"] = self.condition.deltaP_factor
         self.sr_condition_results["DeltaQ_factor"] = self.condition.deltaQ_factor
 
