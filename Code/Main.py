@@ -189,6 +189,8 @@ if __name__ == '__main__':
     output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
     output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_005"
 
+    output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_geral"
+
     for case in cases_list:
         fileName = input + case + ".csv"
         outputfolder = output + case

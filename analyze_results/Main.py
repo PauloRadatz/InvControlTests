@@ -257,10 +257,14 @@ class Main(object):
 
 class MainQSTS(object):
 
-    def __init__(self, case_dic, output_dic):
+    def __init__(self, case_dic, output_dic, drc):
 
+        self.drc = drc
         self.case_order = ["c" + str(i + 1) for i in range(27)]
-        self.columns_list = ["Update Deltas", "Not Update Deltas", "0.2", "0.1"]
+        if self.drc:
+            self.columns_list = ["Update", "UpdateP", "Not Update", "0.4", "0.2", "0.1", "0.05"]
+        else:
+            self.columns_list = ["Update", "UpdateP", "Not Update", "0.2", "0.1", "0.05"]
 
         self.case_dic = case_dic
         self.output_dic = output_dic
@@ -313,12 +317,18 @@ class MainQSTS(object):
             del df_iterations_dic[key]['level_1']
             df_iterations_dic[key] = df_iterations_dic[key]["Control Iteration Mean"].reindex(index=self.case_order)
 
-        self.df_scenarios = pd.concat(df_scenarios_dic, axis=1)[["Update Deltas", "Not Update Deltas", "0.2", "0.1"]]
-        self.df_iterations = pd.concat(df_iterations_dic, axis=1)[["Update Deltas", "Not Update Deltas", "0.2", "0.1"]]
+        self.df_scenarios = pd.concat(df_scenarios_dic, axis=1)[self.columns_list]
+        self.df_iterations = pd.concat(df_iterations_dic, axis=1)[self.columns_list]
 
         self.df_scenarios[["penetration", "buses", "type"]] = self.df_cases
         self.df_iterations[["penetration", "buses", "type"]] = self.df_cases
         #self.df_iterations["case"] = self.df_iterations.index
+
+        if self.drc:
+            self.df_scenarios[["penetration", "buses", "type"] + self.columns_list].to_csv(r'G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Figure\df_scenarios.csv')
+        else:
+            self.df_scenarios[["penetration", "buses", "type"] + self.columns_list].to_csv(
+                r'G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Figure\df_scenarios.csv')
 
         print "here"
 
@@ -326,13 +336,14 @@ class MainQSTS(object):
 
         for function in ["Q", "P", "All"]:
             data_iteration = self.df_iterations[self.df_iterations["type"] == function][self.columns_list]
-            self.box_plot(data_iteration, output, 'C_Box_' + function, function + " functions", "Control Iteration")
+            self.box_plot(data_iteration, output, 'C_Box_' + function, function + " functions", "mean - Num. Control Iteration")
 
-            data_scenario = self.df_scenarios[self.df_scenarios["type"] == function][self.columns_list]
-            self.box_plot(data_scenario, output, 'S_Box_' + function, function + " functions", "Scenarios without Issue")
+            #data_scenario = self.df_scenarios[self.df_scenarios["type"] == function][self.columns_list]
+            #self.box_plot(data_scenario, output, 'S_Box_' + function, function + " functions", "Scenarios without Issue")
 
-        self.bar_plot(self.df_scenarios[self.columns_list], output, 'S_Bar', None, "Scenarios without Issue")
-        self.bar_plot(self.df_iterations[self.columns_list], output, 'C_Bar', None, "Control Iteration")
+        self.bar_plot(100 - self.df_scenarios[self.columns_list], output, 'S_Bar', None, "Scenarios WITH Issue (%)")
+        self.bar_plot(self.df_iterations[self.columns_list], output, 'C_Bar', None, "mean - Num. Control Iteration")
+
         # for function in ["Q", "P", "All"]:
         #     data_iteration = self.df_iterations[self.df_iterations["type"] == function][self.columns_list]
         #     self.bar_plot(data_iteration, output, 'C_Bar_' + function, function + " functions", "Control Iteration")
@@ -341,6 +352,7 @@ class MainQSTS(object):
         #     self.bar_plot(data_scenario, output, 'S_Bar_' + function, function + " functions", "Scenarios without Issue")
 
     def box_plot(self, data, output, name, title, ylabel):
+        plt.clf()
         sns.boxplot(data=data)
         #sns.stripplot(data=data, jitter=True, color='k')
 
@@ -362,6 +374,7 @@ class MainQSTS(object):
     def bar_plot(self, data, output, name, title, ylabel):
         #sns.barplot(data=data)
         #sns.stripplot(data=data, jitter=True, color='k')
+        plt.clf()
         data.plot(kind="bar")
 
         if title:
@@ -425,16 +438,34 @@ if __name__ == '__main__':
         a.plot_diff()
 
     else:
-        output = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman"
-        output_aut = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_aut"
-        output_01 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
-        output_02 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_02"
 
-        output_dic = {'Update Deltas': output, 'Not Update Deltas': output_aut, '0.1': output_01, '0.2': output_02}
+        drc = True
 
-        a = MainQSTS(case_dic, output_dic)
+        if drc:
+            output_update = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_Update"
+            output_updatep = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_UpdateP"
+            output_notupdate = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_NotUpdate"
+            output_005 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_005"
+            output_01 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_01"
+            output_02 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_02"
+            output_04 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC\Creelman_04"
+            output_dic = {'Update': output_update, 'UpdateP': output_updatep, 'Not Update': output_notupdate,
+                          '0.4': output_04, '0.2': output_02, '0.1': output_01, '0.05': output_005}
 
-        a.plots(r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS")
+        else:
+            output_update = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_Update"
+            output_updatep = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_UpdateP"
+            output_notupdate = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_NotUpdate"
+            output_005 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_005"
+            output_01 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_01"
+            output_02 = r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\Creelman_02"
+            output_dic = {'Update': output_update, 'UpdateP': output_updatep, 'Not Update': output_notupdate,
+                          '0.2': output_02, '0.1': output_01, '0.05': output_005}
 
+        a = MainQSTS(case_dic, output_dic, drc)
+        if drc:
+            a.plots(r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS\No_DRC")
+        else:
+            a.plots(r"G:\Drives compartilhados\Celso-Paulo\EPRI\2019\AgnosticInvControlModel\Task1\Tests\PVSystem\ConvergenceTests\Output_QSTS")
 
         print "here"

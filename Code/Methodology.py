@@ -136,6 +136,7 @@ class Methodology(object):
         line3 = "New XYCurve.FatorPvsT npts=4 xarray=[0 25 75 100] yarray=[1 1 1 1]"
         line4 = "New Tshape.Temp npts=24 interval=1 temp=[25 25 25 25 25 25 25 25 35 40 45 50 60 60 55 40 35 30 25 25 25 25 25 25]"
         line5 = "New Loadshape.Irrad npts=20 sinterval=1 mult=[0.7 0.75 0.8 0.85 0.9 0.96 0.98 1 1 1 1 0.98 0.9 0.9 0.9 0.9 0.8 0.7 0.6 0.5]"
+        line5 = "redirect PVGenCurve_high.txt"
 
         if self.dss_redirect and scenarioID != -1 and self.dss_redirect_only_first:
             self.f.write("\n" + "!" + line1)
@@ -211,7 +212,7 @@ class Methodology(object):
                 line3 = "makebuslist"
                 line4 = "setkVBase bus=PV_sec_{} kVLL={}".format(busName, kV)
                 line5 = "setkVBase bus=PV_ter_{} kVLL=0.48".format(busName)
-                line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={} daily=Irrad Tdaily=Temp".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
+                line6 = "New PVSystem.PV_{} phases=3 conn=wye bus1=PV_ter_{} kV=0.48 kVA={} irradiance=1 Pmpp={} P-TCurve=FatorPvsT EffCurve=Eff %cutin=0.05 %cutout=0.05 VarFollowInverter=yes kvarlimit={} wattpriority={} daily=PVshape Tdaily=Temp".format(busName, bus, pv["kVA"], pv["Pmpp"], pv["kvarlimit"], pv["wattPriority"])
 
                 if self.dss_redirect and self.dss_redirect_only_first:
                     self.f.write("\n" + line1)
@@ -295,7 +296,7 @@ class Methodology(object):
 
                 elif smart_function == "DRC":
                     # DRC
-                    line = 'New InvControl.{} Mode=DYNAMICREACCURR RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=2s EventLog=yes'.\
+                    line = 'New InvControl.{} Mode=DYNAMICREACCURR RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s EventLog=yes'.\
                         format(busName, pv["RefReactivePower"], self.condition.deltaQ_factor, busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
 
                 elif smart_function == "VV_VW":
@@ -303,7 +304,7 @@ class Methodology(object):
                         .format(busName, pv["voltage_curvex_ref"], self.condition.deltaP_factor, self.condition.deltaQ_factor, pv["voltwattYAxis"], pv["RefReactivePower"], busName, self.condition.voltageChangeTolerance, self.condition.activePChangeTolerance, self.condition.varChangeTolerance)
 
                 elif smart_function == "VV_DRC":
-                    line = 'New InvControl.{} CombiMode=VV_DRC voltage_curvex_ref={} vvc_curve1=generic RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=2s EventLog=yes '\
+                    line = 'New InvControl.{} CombiMode=VV_DRC voltage_curvex_ref={} vvc_curve1=generic RefReactivePower={} deltaQ_factor={} PVSystemList=PVSystem.PV_{} VoltageChangeTolerance={} VarChangeTolerance={} DbVMin=1 DbVMax=1 ArGraLowV=50  arGraHiV=50 DynReacavgwindowlen=300s EventLog=yes '\
                         .format(busName, pv["voltage_curvex_ref"], pv["RefReactivePower"], self.condition.deltaQ_factor, busName, self.condition.voltageChangeTolerance, self.condition.varChangeTolerance)
 
                 if self.dss_redirect and self.dss_redirect_only_first:
@@ -363,14 +364,14 @@ class Methodology(object):
     def solve_qsts(self):
 
         control_list = []
-        line1 = "set mode=daily stepsize=1s number=1"
+        line1 = "set mode=daily stepsize=5s number=17292"
         line2 = "set maxcontroliter ={}".format(self.condition.maxControlIter)
         line3 = "set maxiterations=1000"
         line4 = "batchedit invcontrol..* deltaQ_factor={}".format(self.condition.deltaQ_factor)
         line5 = "batchedit invcontrol..* deltaP_factor={}".format(self.condition.deltaP_factor)
         #line4 = "batchedit invcontrol..* deltaQ_factor=0.1"
         #line5 = "batchedit invcontrol..* deltaP_factor=0.1"
-        line6 = "!solve"
+        line6 = "solve"
 
         if self.dss_communication == "COM":
             self.dss.dssObj.AllowForms = "false"
@@ -397,15 +398,29 @@ class Methodology(object):
             print line5
             print line6
 
-        flag = True
+        flag = False
+        flag_geral = True
 
-        for h in range(20):
-            line = "solve"
-            if self.dss_communication == "COM":
-                self.dss.dssText.Command = line
-            else:
-                self.dss.text(line)
+        if flag:
+            for h in range(20):
+                line = "solve"
+                if flag:
+                    if self.dss_communication == "COM":
+                        self.dss.dssText.Command = line
+                    else:
+                        self.dss.text(line)
 
+                    if self.dss_communication == "COM":
+                        control_iterations = self.dss.dssSolution.ControlIterations
+                        control_list.append(control_iterations)
+                    else:
+                        control_iterations = self.dss.get_Solution_ControlIterations()
+                        control_list.append(control_iterations)
+
+                    if control_iterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
+                        self.resultsObj.get_config_issued()
+                        flag = False
+        elif flag_geral:
             if self.dss_communication == "COM":
                 control_iterations = self.dss.dssSolution.ControlIterations
                 control_list.append(control_iterations)
@@ -415,13 +430,13 @@ class Methodology(object):
 
             if control_iterations == self.condition.maxControlIter and self.condition.export_scenario_issue in Methodology.list_true:
                 self.resultsObj.get_config_issued()
-                flag = False
+
 
         if flag:
             self.condition.controlIterations.append(sum(control_list))
 
-        print control_list
-        print sum(control_list)
+        print "Last control: " + str(control_list[-1])
+        print "Total: " + str(sum(control_list))
 
     def get_scenario_results_qsts(self):
 
